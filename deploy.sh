@@ -44,7 +44,7 @@ mkdir -p "$TARGET/agent_docs/postmortems"
 
 # Copy commands
 echo "Installing commands..."
-for cmd in wiggum create-issues close-issue triage bootstrap-project; do
+for cmd in wiggum create-issues close-issue triage bootstrap-project deploy-blueprint-claude; do
     src="$GOLDEN/.claude/commands/$cmd.md"
     dst="$TARGET/.claude/commands/$cmd.md"
     if [ -f "$dst" ]; then
@@ -225,6 +225,7 @@ echo "  /create-issues   — Plan to GitHub issues"
 echo "  /close-issue     — Quality gate for closure"
 echo "  /triage          — Backlog analysis"
 echo "  /pomo            — Post-mortem & lessons"
+echo "  /deploy-blueprint-claude — Update from blueprint-claude-kit"
 echo "  /ce:brainstorm   — Explore requirements (from compound-engineering plugin)"
 echo "  /ce:plan         — Create implementation plan (from compound-engineering plugin)"
 echo "  /ce:review       — Multi-agent code review (from compound-engineering plugin)"

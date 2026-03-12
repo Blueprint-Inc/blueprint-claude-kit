@@ -451,7 +451,8 @@ your-project/
 │   │   ├── create-issues.md
 │   │   ├── close-issue.md
 │   │   ├── triage.md
-│   │   └── bootstrap-project.md
+│   │   ├── bootstrap-project.md
+│   │   └── deploy-blueprint-claude.md
 │   └── skills/
 │       └── pomo/SKILL.md
 └── tasks/                              # Plans and history (optional)
