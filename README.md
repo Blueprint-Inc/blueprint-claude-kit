@@ -343,6 +343,7 @@ Total open: 12 | Ready: 7 | Blocked: 5
 - Max 40 active lessons — `/pomo` prunes automatically when exceeded
 - The lifecycle prevents lesson bloat while surfacing the most valuable patterns
 - Lessons are read at session start, so they prevent repeat mistakes
+- For incidents that need the full narrative (not just a rule), write a postmortem to `agent_docs/postmortems/` — see the README there for format and criteria
 
 ---
 
@@ -376,8 +377,10 @@ Total open: 12 | Ready: 7 | Blocked: 5
 
 ```
 1. Open Claude Code in your project
-2. Describe the bug and let Claude fix it
-3. /pomo                   — if the root cause was surprising, capture the lesson
+2. Search postmortems first  — the answer may already be there
+3. Describe the bug and let Claude fix it
+4. /pomo                   — if the root cause was surprising, capture the lesson
+5. Write a postmortem      — if it meets the criteria (recurring, non-obvious, production impact)
 ```
 
 ### "I'm starting a new sprint"
@@ -413,6 +416,7 @@ These files are loaded on-demand by commands, not every session. This keeps your
 | `issue-conventions.md` | `/create-issues`, `/close-issue`, `/wiggum` | Issue title format, body template, dependency syntax |
 | `issue-tracker-ops.md` | All issue-touching commands | GitHub CLI operations table (15 commands) |
 | `self-improvement.md` | `/pomo`, `/ce:review`, `/wiggum` | Lesson format, lifecycle, pruning rules |
+| `postmortems/README.md` | After non-obvious bug fixes | Postmortem format, when to write one |
 
 Add your own project-specific reference docs:
 
@@ -420,6 +424,7 @@ Add your own project-specific reference docs:
 agent_docs/active-features.md    — deployed feature details
 agent_docs/api-reference.md      — external API quirks
 agent_docs/deploy-commands.md    — deployment procedures
+agent_docs/postmortems/          — incident write-ups for shared debugging knowledge
 ```
 
 Reference them from CLAUDE.md's reference docs table so Claude knows when to read them.
@@ -435,7 +440,9 @@ your-project/
 ├── agent_docs/                         # On-demand reference (saves tokens)
 │   ├── issue-conventions.md
 │   ├── issue-tracker-ops.md
-│   └── self-improvement.md
+│   ├── self-improvement.md
+│   └── postmortems/
+│       └── README.md
 ├── .claude/
 │   ├── settings.local.json             # Tool permissions (gitignored)
 │   ├── lessons.md                      # Active lessons (max 40)

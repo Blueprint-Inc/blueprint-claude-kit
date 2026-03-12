@@ -40,6 +40,7 @@ echo "Creating directories..."
 mkdir -p "$TARGET/.claude/commands"
 mkdir -p "$TARGET/.claude/skills/pomo"
 mkdir -p "$TARGET/agent_docs"
+mkdir -p "$TARGET/agent_docs/postmortems"
 
 # Copy commands
 echo "Installing commands..."
@@ -80,7 +81,7 @@ fi
 
 # Copy agent_docs
 echo "Installing agent_docs..."
-for doc in issue-conventions issue-tracker-ops self-improvement; do
+for doc in issue-conventions issue-tracker-ops self-improvement postmortems/README; do
     src="$GOLDEN/agent_docs/$doc.md"
     dst="$TARGET/agent_docs/$doc.md"
     if [ -f "$dst" ]; then
@@ -166,6 +167,16 @@ if [ -f "$TARGET/CLAUDE.md" ]; then
 
 For issue format specs, see `agent_docs/issue-conventions.md`. For CLI operations, see `agent_docs/issue-tracker-ops.md`.
 
+### Postmortems
+
+After deploying a **bug fix**, write a postmortem to `agent_docs/postmortems/` if:
+- The root cause was surprising or non-obvious
+- The bug recurred (2+ occurrences)
+- Production data or user-facing behavior was affected
+- The fix required understanding multiple interacting systems
+
+See `agent_docs/postmortems/README.md` for format. Search existing postmortems before debugging — the answer may already be there.
+
 ### Continuous Improvement
 
 Maintain `.claude/lessons.md` with patterns from corrections and reviews. See `agent_docs/self-improvement.md` for format and lifecycle.
@@ -177,6 +188,7 @@ Maintain `.claude/lessons.md` with patterns from corrections and reviews. See `a
 | `agent_docs/issue-conventions.md` | Creating or editing issues |
 | `agent_docs/issue-tracker-ops.md` | Running issue tracker CLI commands |
 | `agent_docs/self-improvement.md` | Updating lessons |
+| `agent_docs/postmortems/` | Debugging recurring or non-obvious bugs |
 WORKFLOW_EOF
         echo "  Appended workflow section"
     fi
