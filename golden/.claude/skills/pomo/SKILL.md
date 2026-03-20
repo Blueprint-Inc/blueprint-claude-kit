@@ -31,16 +31,29 @@ Write brief summary (3-5 sentences) for user to confirm.
 
 ### Step 3: Check for duplicates
 
-Read `.claude/lessons.md`. Same pattern → update existing. Related but distinct → new + cross-reference.
+Check `tasks/instincts/` for existing YAML instincts and `.claude/lessons.md` for legacy entries.
+Same pattern → update existing. Related but distinct → new + cross-reference.
 
 ### Step 3b: Lifecycle management
 
-If > 40 entries, prune: promoted → remove, stale → archive to `.claude/lessons-archive.md`.
+If > 40 total entries (instincts + legacy lessons), prune: promoted → remove, stale → archive.
 See `agent_docs/self-improvement.md` for lifecycle.
 
-### Step 4: Write the lesson
+### Step 4: Write the lesson as a YAML instinct
 
-Format per `agent_docs/self-improvement.md`. Generalizable rules, not incident-specific.
+Write new lessons as YAML files in `tasks/instincts/<id>.yaml`:
+
+```yaml
+id: <kebab-case-name>
+trigger: "<when this applies>"
+action: "<what to do>"
+confidence: <0.3-0.9>
+domain: <code-style|testing|git|debugging|workflow|security>
+scope: project
+evidence: "<what happened and when>"
+```
+
+Generalizable rules, not incident-specific. See `agent_docs/self-improvement.md` for the full schema.
 
 ### Step 5: Consider CLAUDE.md update
 

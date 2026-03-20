@@ -38,58 +38,25 @@ Then clone whichever project repos you'll be working in alongside them.
 
 ---
 
-## Step 2: Install Prerequisites
+## Step 2: Run the Setup Script
 
-These CLI tools are used across the environment. Install any you don't already have.
+The setup script installs all prerequisites automatically — Homebrew, Node.js, Bun, GitHub CLI, Claude Code CLI, plugins, Playwright browsers, GitNexus, and qmd.
 
-### Required
+```bash
+~/Projects/blueprint-claude-kit/setup.sh
+```
 
-| Tool | What it's for | Install |
-|------|--------------|---------|
-| [Claude Code](https://claude.ai/code) | The AI coding agent | `npm install -g @anthropic-ai/claude-code` |
-| [GitHub CLI](https://cli.github.com/) (`gh`) | Issue management, PRs, `/create-issues`, `/wiggum`, `/triage` | `brew install gh` then `gh auth login` |
-| [Bun](https://bun.sh) | Runs qmd and compound-engineering-plugin | `curl -fsSL https://bun.sh/install \| bash` |
-| [Node.js](https://nodejs.org/) | Frontend projects, Playwright | `brew install nvm` then `nvm install 18` |
-| [Python 3](https://www.python.org/) | Python projects, scripting | `brew install python` |
+The script is idempotent — it skips anything already installed and is safe to re-run.
 
-### Optional (depending on your projects)
+> **Note:** You will be prompted to authenticate with GitHub (`gh auth login`) if not already authenticated.
+
+### Optional tools (project-dependent)
 
 | Tool | What it's for | Install |
 |------|--------------|---------|
 | [gcloud CLI](https://cloud.google.com/sdk/docs/install) | GCP deploys (Cloud Functions, BigQuery) | `brew install google-cloud-sdk` then `gcloud auth login` |
 | [gws](https://github.com/nicholasgasior/gws) | Google Workspace CLI (Drive, Gmail, Sheets) | `npm install -g gws` |
-
----
-
-## Step 3: Install Claude Code Plugins
-
-Plugins extend Claude Code with specialized agents, review tools, and workflows. Install the shared set:
-
-```bash
-# Multi-agent review, brainstorming, planning — the core workflow engine
-claude plugins install compound-engineering@every-marketplace
-
-# Skill system — TDD, debugging, brainstorming, plan execution
-claude plugins install superpowers@claude-plugins-official
-
-# Browser automation — screenshots, form filling, web testing
-claude plugins install playwright@claude-plugins-official
-
-# CLAUDE.md auditing and improvement
-claude plugins install claude-md-management@claude-plugins-official
-
-# PR review with specialized agents
-claude plugins install pr-review-toolkit@claude-plugins-official
-
-# Automated dev loop (Ralph Wiggum)
-claude plugins install ralph-wiggum@claude-code-plugins
-```
-
-Install Playwright's browser binaries after enabling the plugin:
-
-```bash
-npx playwright install
-```
+| [Python 3](https://www.python.org/) | Python projects, scripting | `brew install python` |
 
 ### Verify
 
@@ -97,23 +64,15 @@ Run `claude` and check that the plugins load. You should see skills like `/ce:br
 
 ---
 
-## Step 4: Configure MCP Servers
+## Step 3: Configure MCP Servers
 
-MCP servers give Claude access to external tools and data sources. Add these to your global config.
+MCP servers give Claude access to external tools and data sources. `setup.sh` already installed qmd and registered it as an MCP server — you just need to index your projects.
 
-### qmd — Local Document Search
+### qmd — Index Your Projects
 
 qmd indexes your project files locally so Claude can search them instead of reading entire files. Saves ~92% of token usage.
 
-```bash
-# Install
-bun install -g github:tobi/qmd
-
-# Add as MCP server (global, available in all projects)
-claude mcp add --scope user qmd -- qmd mcp
-```
-
-Index your projects after installing:
+Index each project you work on:
 
 ```bash
 cd ~/Projects/your-project
@@ -133,7 +92,7 @@ claude mcp add --scope user --transport http google-dev-knowledge \
 
 ---
 
-## Step 5: Set Up Global `CLAUDE.md`
+## Step 4: Set Up Global `CLAUDE.md`
 
 Your global `CLAUDE.md` lives at `~/.claude/CLAUDE.md` and applies to every Claude Code session regardless of project. Use it for personal preferences, tool priorities, and cross-cutting instructions.
 
@@ -168,7 +127,7 @@ Add any personal preferences, API configurations, or tool-specific instructions 
 
 ---
 
-## Step 6: Set Up the Workspace `CLAUDE.md`
+## Step 5: Set Up the Workspace `CLAUDE.md`
 
 The workspace-level `CLAUDE.md` at `~/Projects/CLAUDE.md` provides cross-project context when you open Claude Code from the `~/Projects` directory. This is useful when working across multiple repos in the same session.
 
@@ -182,7 +141,7 @@ If a workspace `CLAUDE.md` already exists, read it and make sure your projects a
 
 ---
 
-## Step 7: Deploy the Kit to Your Projects
+## Step 6: Deploy the Kit to Your Projects
 
 Run the deploy script to install commands, skills, and agent_docs into each project you work on:
 
@@ -213,7 +172,7 @@ Repeat for each project you work on.
 
 ---
 
-## Step 8: Configure Permissions
+## Step 7: Configure Permissions
 
 Claude Code prompts for approval on shell commands by default. Add permissions for frequently used tools to avoid repeated prompts.
 
@@ -256,7 +215,7 @@ The deploy script will remind you about gh permissions if they're missing.
 
 ---
 
-## Step 9: Verify Everything Works
+## Step 8: Verify Everything Works
 
 Quick smoke test to confirm the setup:
 

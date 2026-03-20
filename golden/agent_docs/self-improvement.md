@@ -42,3 +42,31 @@ Update `.claude/lessons.md` when:
 - **Promotion:** Validated 3+ times → propose CLAUDE.md instruction
 - **Archival:** 60+ days with no matches → `.claude/lessons-archive.md`
 - **Deduplication:** Always merge, never duplicate
+
+## Structured Instincts (YAML Format)
+
+New lessons captured via `/pomo` are written as YAML files in `tasks/instincts/`. This structured format enables project scoping, export/import, and programmatic use.
+
+### Schema
+
+```yaml
+id: prefer-tabs-over-spaces          # kebab-case identifier (also the filename)
+trigger: "when writing PHP or SvelteKit code"  # natural-language condition
+action: "Use tabs for indentation, never spaces"  # what to do
+confidence: 0.9                        # 0.3 = tentative, 0.9 = near-certain
+domain: code-style                     # one of: code-style, testing, git, debugging, workflow, security
+scope: project                         # project or global
+evidence: "Corrected by user on 2026-03-15 — campaign manager strictly enforces tabs"
+```
+
+### Storage
+
+- **Project-scoped:** `tasks/instincts/<id>.yaml` (in the project repo)
+- **Global:** `~/.claude/instincts/<id>.yaml` (personal, not committed)
+
+### Relationship to lessons.md
+
+- Existing `.claude/lessons.md` entries continue to work (backward compatible)
+- `/pomo` writes new lessons as YAML instincts to `tasks/instincts/`
+- Instincts follow the same lifecycle (Active → Validated → Promoted → Stale)
+- When an instinct is promoted to CLAUDE.md, remove the YAML file
