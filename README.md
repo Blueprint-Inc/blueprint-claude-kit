@@ -1,21 +1,21 @@
 # Blueprint Claude Kit
 
-A portable Claude Code configuration kit that combines [compound-engineering](https://github.com/anthropics/claude-code) plugin's multi-agent review system with [claude-bootstrapping](https://github.com/quadradad/claude-bootstrapping)'s autonomous development loop. Deploy to any project and get a complete issue-driven, TDD-enforced development workflow.
+A portable Claude Code configuration kit that combines [compound-engineering](https://github.com/EveryInc/compound-engineering-plugin) plugin's multi-agent review system with [claude-bootstrapping](https://github.com/quadradad/claude-bootstrapping)'s autonomous development loop. Deploy to any project and get a complete issue-driven, TDD-enforced development workflow.
 
 ## Prerequisites
 
 - [Claude Code CLI](https://claude.ai/code)
 - [GitHub CLI](https://cli.github.com/) (`gh`) — authenticated with your org
-- [compound-engineering plugin](https://github.com/anthropics/claude-code) installed in Claude Code
+- [compound-engineering plugin](https://github.com/EveryInc/compound-engineering-plugin) installed in Claude Code
 
 ## Quick Start
 
 ```bash
 # 1. Clone this kit
-git clone git@github.com:Blueprint-Inc/blueprint-claude-kit.git ~/blueprint-claude-kit
+git clone git@github.com:Blueprint-Inc/blueprint-claude-kit.git ~/Projects/blueprint-claude-kit
 
 # 2. Deploy to your project
-~/blueprint-claude-kit/deploy.sh /path/to/your/project
+~/Projects/blueprint-claude-kit/deploy.sh /path/to/your/project
 
 # 3. Open in Claude Code and bootstrap
 cd /path/to/your/project
@@ -32,7 +32,7 @@ The deploy script copies commands, skills, and reference docs into your project.
 Every feature flows through this pipeline. You don't have to use every step every time — pick the ones that fit the size of the work.
 
 ```
-/ce:brainstorm → /ce:plan → /create-issues → /wiggum → /ce:review → /close-issue → /pomo
+/ce-brainstorm → /ce-plan → /create-issues → /wiggum → /ce-code-review → /close-issue → /pomo
 ```
 
 ### Quick Reference
@@ -40,8 +40,8 @@ Every feature flows through this pipeline. You don't have to use every step ever
 | Size of work | What to use |
 |-------------|-------------|
 | Quick bug fix | Fix it, `/pomo` if the root cause was surprising |
-| Small feature (< 1 hour) | `/ce:plan` → implement → `/ce:review` |
-| Medium feature (hours) | `/ce:brainstorm` → `/ce:plan` → `/create-issues` → implement → `/ce:review` |
+| Small feature (< 1 hour) | `/ce-plan` → implement → `/ce-code-review` |
+| Medium feature (hours) | `/ce-brainstorm` → `/ce-plan` → `/create-issues` → implement → `/ce-code-review` |
 | Large feature (days) | Full pipeline: brainstorm → plan → issues → `/wiggum` → review → close |
 | Backlog grooming | `/triage` |
 
@@ -49,7 +49,7 @@ Every feature flows through this pipeline. You don't have to use every step ever
 
 ## Commands In Detail
 
-### `/ce:brainstorm` — Explore Before You Build
+### `/ce-brainstorm` — Explore Before You Build
 
 **When to use:** At the start of any non-trivial feature. When the requirements are fuzzy, when there are multiple valid approaches, or when you want to think through edge cases before committing to a plan.
 
@@ -57,7 +57,7 @@ Every feature flows through this pipeline. You don't have to use every step ever
 
 **Example session:**
 ```
-> /ce:brainstorm
+> /ce-brainstorm
 I want to add a daily digest email for contacts who had engagement score changes
 
 Claude will ask:
@@ -69,12 +69,12 @@ Claude will ask:
 
 **Tips:**
 - Don't skip this for ambiguous features — 10 minutes brainstorming saves hours of rework
-- The brainstorm doc feeds directly into `/ce:plan`, so decisions carry forward
+- The brainstorm doc feeds directly into `/ce-plan`, so decisions carry forward
 - You can brainstorm without planning if you just want to think something through
 
 ---
 
-### `/ce:plan` — Create an Implementation Plan
+### `/ce-plan` — Create an Implementation Plan
 
 **When to use:** Before writing code for any feature that touches 3+ files or involves architectural decisions. After brainstorming, or standalone for well-understood features.
 
@@ -82,7 +82,7 @@ Claude will ask:
 
 **Example:**
 ```
-> /ce:plan
+> /ce-plan
 Add ZeroBounce validation as a secondary gate after AudiencePoint in the intake pipeline
 ```
 
@@ -145,7 +145,7 @@ Secondary validation after AudiencePoint to catch spamtraps and invalid addresse
 
 **When to use:** When you have a set of GitHub issues ready to implement and want Claude to work through them autonomously. Best for a batch of well-defined issues with clear acceptance criteria.
 
-**What it does:** Picks the highest-impact unblocked issue, creates a feature branch, writes tests first (TDD), implements, validates, creates a PR, runs `/ce:review`, closes the issue, and moves to the next one. Fully autonomous — no interaction needed until it's done or stuck.
+**What it does:** Picks the highest-impact unblocked issue, creates a feature branch, writes tests first (TDD), implements, validates, creates a PR, runs `/ce-code-review`, closes the issue, and moves to the next one. Fully autonomous — no interaction needed until it's done or stuck.
 
 **Example:**
 ```
@@ -163,7 +163,7 @@ Secondary validation after AudiencePoint to catch spamtraps and invalid addresse
 5. Implement until tests pass (green)
 6. Run full test suite (hard gate)
 7. Commit, push, create PR
-8. Run /ce:review for multi-agent code review
+8. Run /ce-code-review for multi-agent code review
 9. Run /close-issue to validate acceptance criteria
 10. Merge PR, delete branch
 11. → Back to step 1
@@ -184,7 +184,7 @@ Secondary validation after AudiencePoint to catch spamtraps and invalid addresse
 
 ---
 
-### `/ce:review` — Multi-Agent Code Review
+### `/ce-code-review` — Multi-Agent Code Review
 
 **When to use:** Before merging any PR. After implementing a feature manually. When `/wiggum` runs it automatically. Anytime you want a thorough code review.
 
@@ -366,8 +366,8 @@ Total open: 12 | Ready: 7 | Blocked: 5
 
 ```
 1. Open Claude Code in your project
-2. /ce:brainstorm          — talk through the feature, surface edge cases
-3. /ce:plan                — create implementation plan
+2. /ce-brainstorm          — talk through the feature, surface edge cases
+3. /ce-plan                — create implementation plan
 4. /create-issues me       — break into GitHub issues assigned to you
 5. /wiggum                 — let it implement, test, PR, and close each issue
 6. Review the PRs it created
@@ -393,13 +393,13 @@ Total open: 12 | Ready: 7 | Blocked: 5
 ### "Someone submitted a PR"
 
 ```
-1. /ce:review              — multi-agent review covering code quality, security, performance
+1. /ce-code-review              — multi-agent review covering code quality, security, performance
 ```
 
 ### "I want to add this kit to a new project"
 
 ```bash
-~/blueprint-claude-kit/deploy.sh /path/to/new/project
+~/Projects/blueprint-claude-kit/deploy.sh /path/to/new/project
 cd /path/to/new/project
 claude
 > /bootstrap-project
@@ -415,7 +415,7 @@ These files are loaded on-demand by commands, not every session. This keeps your
 |------|---------|----------|
 | `issue-conventions.md` | `/create-issues`, `/close-issue`, `/wiggum` | Issue title format, body template, dependency syntax |
 | `issue-tracker-ops.md` | All issue-touching commands | GitHub CLI operations table (15 commands) |
-| `self-improvement.md` | `/pomo`, `/ce:review`, `/wiggum` | Lesson format, lifecycle, pruning rules |
+| `self-improvement.md` | `/pomo`, `/ce-code-review`, `/wiggum` | Lesson format, lifecycle, pruning rules |
 | `postmortems/README.md` | After non-obvious bug fixes | Postmortem format, when to write one |
 
 Add your own project-specific reference docs:
@@ -454,7 +454,9 @@ your-project/
 │   │   ├── bootstrap-project.md
 │   │   └── deploy-blueprint-claude.md
 │   └── skills/
-│       └── pomo/SKILL.md
+│       ├── pomo/SKILL.md
+│       ├── deploy/SKILL.md
+│       └── ce-deep-review-beta/        # cross-model deep review of plans (beta)
 └── tasks/                              # Plans and history (optional)
 ```
 

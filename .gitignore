@@ -1,0 +1,16 @@
+# Self-deploy artifacts — running `deploy.sh .` (or deploying into the kit root)
+# writes the kit's output into this repo. The canonical SOURCE lives under golden/;
+# these root copies are deploy output, not source, and must not be committed.
+/.claude/
+/agent_docs/
+/compound-engineering.local.md
+/tasks/
+
+# Per-deploy state + tooling output
+.blueprint-kit-version
+blueprint-kit-manifest.json
+.gitnexus/
+
+# OS / editor noise
+.DS_Store
+*.swp

@@ -19,13 +19,13 @@ These three repos power the shared Claude Code environment. Everyone needs all o
 
 ```bash
 # This kit — commands, skills, and agent_docs that deploy into every project
-git clone <your-org>/blueprint-claude-kit.git
+git clone git@github.com:Blueprint-Inc/blueprint-claude-kit.git
 
 # Autonomous dev loop foundation (wiggum, issue management, TDD enforcement)
 git clone https://github.com/quadradad/claude-bootstrapping.git
 
 # Multi-agent review system, brainstorming, and planning (Claude Code plugin)
-git clone https://github.com/anthropics/claude-code.git compound-engineering-plugin
+git clone https://github.com/EveryInc/compound-engineering-plugin.git compound-engineering-plugin
 ```
 
 Then clone whichever project repos you'll be working in alongside them.
@@ -60,7 +60,7 @@ The script is idempotent — it skips anything already installed and is safe to 
 
 ### Verify
 
-Run `claude` and check that the plugins load. You should see skills like `/ce:brainstorm`, `/ce:plan`, `/ce:review`, `/wiggum`, and `/pomo` available.
+Run `claude` and check that the plugins load. You should see skills like `/ce-brainstorm`, `/ce-plan`, `/ce-code-review`, `/wiggum`, and `/pomo` available.
 
 ---
 
@@ -151,7 +151,7 @@ Run the deploy script to install commands, skills, and agent_docs into each proj
 
 The script:
 - Copies commands (`/wiggum`, `/create-issues`, `/close-issue`, `/triage`, `/bootstrap-project`, `/deploy-blueprint-claude`)
-- Copies skills (`/pomo`)
+- Copies skills (`/pomo`, `/deploy`, `/ce-deep-review-beta`)
 - Copies reference docs to `agent_docs/`
 - Creates `compound-engineering.local.md` template
 - Creates `.claude/lessons.md`
@@ -238,14 +238,14 @@ Then in Claude Code:
 Once you're set up, here's how the workflow commands fit together:
 
 ```
-/ce:brainstorm → /ce:plan → /create-issues → /wiggum → /ce:review → /close-issue → /pomo
+/ce-brainstorm → /ce-plan → /create-issues → /wiggum → /ce-code-review → /close-issue → /pomo
 ```
 
 | Size of work | What to use |
 |-------------|-------------|
 | Quick bug fix | Fix it, `/pomo` if the root cause was surprising |
-| Small feature (< 1 hour) | `/ce:plan` → implement → `/ce:review` |
-| Medium feature (hours) | `/ce:brainstorm` → `/ce:plan` → `/create-issues` → implement → `/ce:review` |
+| Small feature (< 1 hour) | `/ce-plan` → implement → `/ce-code-review` |
+| Medium feature (hours) | `/ce-brainstorm` → `/ce-plan` → `/create-issues` → implement → `/ce-code-review` |
 | Large feature (days) | Full pipeline: brainstorm → plan → issues → `/wiggum` → review → close |
 | Backlog grooming | `/triage` |
 

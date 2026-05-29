@@ -1,6 +1,6 @@
 # Self-Improvement System
 
-> Reference document. Loaded by /pomo, /ce:review, and /wiggum when updating lessons.
+> Reference document. Loaded by /pomo, /ce-code-review, and /wiggum when updating lessons.
 
 ## Lessons Format
 
@@ -17,7 +17,7 @@ Each entry in `.claude/lessons.md`:
 
 Update `.claude/lessons.md` when:
 - After any user correction
-- After /ce:review finds issues Claude introduced
+- After /ce-code-review finds issues Claude introduced
 - After /wiggum retry failures (2+ attempts)
 - Deduplicate ruthlessly
 

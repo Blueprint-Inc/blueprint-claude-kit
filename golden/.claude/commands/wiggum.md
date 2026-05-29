@@ -128,7 +128,7 @@ gh pr create \
 
 ### 10. Review
 
-Run `/ce:review` for multi-agent code review. Address any findings before proceeding.
+Run `/ce-code-review` for multi-agent code review. Address any findings before proceeding.
 
 ### 11. Close issue
 

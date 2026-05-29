@@ -10,20 +10,6 @@ GOLDEN="$SCRIPT_DIR/golden"
 KIT_VERSION=$(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || echo "unknown")
 
 # --- Flags ---
-YES_MODE=false
-DRY_RUN=false
-TARGET=""
-
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --yes|-y) YES_MODE=true; shift ;;
-        --dry-run|-n) DRY_RUN=true; shift ;;
-        --help|-h) usage ;;
-        -*) echo "Unknown option: $1"; exit 1 ;;
-        *) TARGET="$1"; shift ;;
-    esac
-done
-
 usage() {
     echo "Usage: $0 [options] <target-project-path>"
     echo ""
@@ -40,6 +26,20 @@ usage() {
     echo "  /bootstrap-project"
     exit 1
 }
+
+YES_MODE=false
+DRY_RUN=false
+TARGET=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --yes|-y) YES_MODE=true; shift ;;
+        --dry-run|-n) DRY_RUN=true; shift ;;
+        --help|-h) usage ;;
+        -*) echo "Unknown option: $1"; exit 1 ;;
+        *) TARGET="$1"; shift ;;
+    esac
+done
 
 if [ -z "$TARGET" ]; then
     usage
@@ -173,7 +173,7 @@ if ! $DRY_RUN; then
     echo ""
     echo "Creating directories..."
     mkdir -p "$TARGET/.claude/commands"
-    mkdir -p "$TARGET/.claude/skills/pomo"
+    mkdir -p "$TARGET/.claude/skills"
     mkdir -p "$TARGET/agent_docs"
     mkdir -p "$TARGET/agent_docs/postmortems"
     mkdir -p "$TARGET/tasks/instincts"
@@ -218,40 +218,49 @@ for cmd in wiggum create-issues close-issue triage bootstrap-project deploy-blue
     record_file "$rel" "$(sha256_file "$dst")"
 done
 
-# --- Copy skills ---
+# --- Copy skills (every directory under golden/.claude/skills/, recursively) ---
+# Generalized from the old single-file pomo copy so multi-file skills (with
+# references/, scripts/, nested dirs) deploy intact. Each file gets the same
+# overwrite-confirm + manifest treatment as commands. bash 3 compatible
+# (find + while-read + process substitution; no associative arrays).
 
 echo ""
 echo "Installing skills..."
-src="$GOLDEN/.claude/skills/pomo/SKILL.md"
-dst="$TARGET/.claude/skills/pomo/SKILL.md"
-rel=".claude/skills/pomo/SKILL.md"
+if [ -d "$GOLDEN/.claude/skills" ]; then
+    while IFS= read -r src; do
+        rel="${src#"$GOLDEN"/}"
+        dst="$TARGET/$rel"
 
-if $DRY_RUN; then
-    if [ -f "$dst" ]; then
-        if [ "$(sha256_file "$src")" != "$(sha256_file "$dst")" ]; then
-            echo "  [dry-run] Would update pomo/SKILL.md"
-        else
-            echo "  [dry-run] pomo/SKILL.md unchanged"
+        if $DRY_RUN; then
+            if [ -f "$dst" ]; then
+                if [ "$(sha256_file "$src")" != "$(sha256_file "$dst")" ]; then
+                    echo "  [dry-run] Would update $rel"
+                else
+                    echo "  [dry-run] $rel unchanged"
+                fi
+            else
+                echo "  [dry-run] Would install $rel"
+            fi
+            record_file "$rel" "$(sha256_file "$src")"
+            continue
         fi
-    else
-        echo "  [dry-run] Would install pomo/SKILL.md"
-    fi
-    record_file "$rel" "$(sha256_file "$src")"
-else
-    if [ -f "$dst" ]; then
-        if ! confirm "  pomo/SKILL.md exists. Overwrite?"; then
-            echo "  Skipped pomo/SKILL.md"
-            record_file "$rel" "$(sha256_file "$dst")"
-        else
-            cp "$src" "$dst"
-            echo "  Installed pomo/SKILL.md"
-            record_file "$rel" "$(sha256_file "$dst")"
+
+        if [ -f "$dst" ]; then
+            if [ "$(sha256_file "$src")" = "$(sha256_file "$dst")" ]; then
+                record_file "$rel" "$(sha256_file "$dst")"
+                continue
+            fi
+            if ! confirm "  $rel exists. Overwrite?"; then
+                echo "  Skipped $rel"
+                record_file "$rel" "$(sha256_file "$dst")"
+                continue
+            fi
         fi
-    else
+        mkdir -p "$(dirname "$dst")"
         cp "$src" "$dst"
-        echo "  Installed pomo/SKILL.md"
+        echo "  Installed $rel"
         record_file "$rel" "$(sha256_file "$dst")"
-    fi
+    done < <(find "$GOLDEN/.claude/skills" -type f | sort)
 fi
 
 # --- Copy agent_docs ---
@@ -378,14 +387,14 @@ if ! $DRY_RUN; then
 | `/close-issue` | Quality gate: validate acceptance criteria, then close |
 | `/triage` | Backlog analysis with dependency graph |
 | `/pomo` | Post-mortem: capture lessons from debugging sessions |
-| `/ce:brainstorm` | Explore requirements before planning |
-| `/ce:plan` | Create detailed implementation plan |
-| `/ce:review` | Multi-agent code review |
+| `/ce-brainstorm` | Explore requirements before planning |
+| `/ce-plan` | Create detailed implementation plan |
+| `/ce-code-review` | Multi-agent code review |
 
 ### Development Workflow
 
 ```
-/ce:brainstorm → /ce:plan → /create-issues → /wiggum → /ce:review → /close-issue → /pomo
+/ce-brainstorm → /ce-plan → /create-issues → /wiggum → /ce-code-review → /close-issue → /pomo
 ```
 
 ### Canonical Skills
@@ -394,13 +403,13 @@ When multiple plugins provide overlapping skills, use these:
 
 | Workflow | Use This | Not This |
 |----------|----------|----------|
-| Brainstorm | `/ce:brainstorm` | `superpowers:brainstorming` |
-| Plan | `/ce:plan` | `superpowers:writing-plans` |
-| Execute | `/ce:work` | `superpowers:executing-plans` |
-| Review (give) | `/ce:review` | `superpowers:requesting-code-review` |
-| Git worktrees | `/ce:git-worktree` | `superpowers:using-git-worktrees` |
-| Write skills | `/ce:create-agent-skills` | `superpowers:writing-skills` |
-| Frontend UI | `/ce:frontend-design` | — |
+| Brainstorm | `/ce-brainstorm` | `superpowers:brainstorming` |
+| Plan | `/ce-plan` | `superpowers:writing-plans` |
+| Execute | `/ce-work` | `superpowers:executing-plans` |
+| Review (give) | `/ce-code-review` | `superpowers:requesting-code-review` |
+| Git worktrees | `/ce-worktree` | `superpowers:using-git-worktrees` |
+| Write skills | `/ce-create-agent-skills` | `superpowers:writing-skills` |
+| Frontend UI | `/ce-frontend-design` | — |
 
 Superpowers-only (no CE equivalent): TDD, verification-before-completion, receiving-code-review, dispatching-parallel-agents, finishing-a-development-branch.
 
@@ -576,9 +585,9 @@ echo "  /close-issue     — Quality gate for closure"
 echo "  /triage          — Backlog analysis"
 echo "  /pomo            — Post-mortem & lessons"
 echo "  /deploy-blueprint-claude — Update from blueprint-claude-kit"
-echo "  /ce:brainstorm   — Explore requirements (from compound-engineering plugin)"
-echo "  /ce:plan         — Create implementation plan (from compound-engineering plugin)"
-echo "  /ce:review       — Multi-agent code review (from compound-engineering plugin)"
+echo "  /ce-brainstorm   — Explore requirements (from compound-engineering plugin)"
+echo "  /ce-plan         — Create implementation plan (from compound-engineering plugin)"
+echo "  /ce-code-review       — Multi-agent code review (from compound-engineering plugin)"
 echo ""
 echo "First time? See the full onboarding guide:"
 echo "  $SCRIPT_DIR/ONBOARDING.md"

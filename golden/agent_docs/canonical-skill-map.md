@@ -6,18 +6,18 @@ When multiple plugins provide overlapping skills, use the canonical skill listed
 
 | Workflow Step | Use This | Not This |
 |---|---|---|
-| Ideation | `/ce:ideate` | — |
-| Brainstorming | `/ce:brainstorm` | `superpowers:brainstorming` |
-| Planning | `/ce:plan` | `superpowers:writing-plans` |
-| Deepening plans | `/ce:deepen-plan` | — |
-| Document review | `/ce:document-review` | — |
-| Executing work | `/ce:work` | `superpowers:executing-plans`, `superpowers:subagent-driven-development` |
-| Code review (giving) | `/ce:review` | `superpowers:requesting-code-review` |
-| Git worktrees | `/ce:git-worktree` | `superpowers:using-git-worktrees` |
-| Writing skills | `/ce:create-agent-skills` | `superpowers:writing-skills` |
-| Frontend UI | `/ce:frontend-design` | `frontend-design:frontend-design` (standalone — uninstall) |
-| Compounding knowledge | `/ce:compound` | — |
-| Todo resolution | `/ce:resolve-todo-parallel` | — |
+| Ideation | `/ce-ideate` | — |
+| Brainstorming | `/ce-brainstorm` | `superpowers:brainstorming` |
+| Planning | `/ce-plan` | `superpowers:writing-plans` |
+| Deepening plans | `/ce-plan` | — |
+| Document review | `/ce-doc-review` | — |
+| Executing work | `/ce-work` | `superpowers:executing-plans`, `superpowers:subagent-driven-development` |
+| Code review (giving) | `/ce-code-review` | `superpowers:requesting-code-review` |
+| Git worktrees | `/ce-worktree` | `superpowers:using-git-worktrees` |
+| Writing skills | `/ce-create-agent-skills` | `superpowers:writing-skills` |
+| Frontend UI | `/ce-frontend-design` | `frontend-design:frontend-design` (standalone — uninstall) |
+| Compounding knowledge | `/ce-compound` | — |
+| Todo resolution | `/ce-resolve-todo-parallel` | — |
 
 ## Superpowers-Only Skills (No CE Equivalent)
 
@@ -34,7 +34,7 @@ These skills are unique to superpowers and should be used as-is:
 
 ## Code Review Stack
 
-- **Primary review:** `/ce:review` — dispatches 15 specialized agents (security, performance, architecture, language-specific reviewers, data integrity, schema drift, deployment verification)
+- **Primary review:** `/ce-code-review` — dispatches 15 specialized agents (security, performance, architecture, language-specific reviewers, data integrity, schema drift, deployment verification)
 - **Supplemental review:** `pr-review-toolkit` — 4 unique agents not covered by ce-review:
   - `silent-failure-hunter` — error handling auditing
   - `pr-test-analyzer` — test coverage quality
@@ -54,7 +54,7 @@ claude plugins uninstall frontend-design@claude-plugins-official
 ## Development Lifecycle
 
 ```
-/ce:brainstorm → /ce:plan → /create-issues → /wiggum → /ce:review → /close-issue → /pomo
+/ce-brainstorm → /ce-plan → /create-issues → /wiggum → /ce-code-review → /close-issue → /pomo
 ```
 
 ## When to Read This Doc
