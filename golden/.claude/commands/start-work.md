@@ -31,14 +31,22 @@ repo's main checkout.
    If the tree is dirty and checkout/pull is blocked, **STOP and report exactly
    what's uncommitted** — never discard or stash without asking.
 
-4. **Create the worktree.** Pick a short kebab-case slug for the task and create a
+4. **Scan for active sibling sessions** (awareness — the rest of the repo is
+   invisible from inside a worktree, yet every worktree shares one `.git`, so two
+   sessions can clobber the *same logical file* at merge time). Run
+   `git worktree list`; for each *other* worktree, run
+   `git -C <path> status --porcelain` and note its branch. Report which ones are
+   actively editing and the files involved — call it out loudly if any overlap the
+   area this task will touch. Informational only; don't block.
+
+5. **Create the worktree.** Pick a short kebab-case slug for the task and create a
    worktree whose branch name matches it — `feat/<slug>`, `fix/<slug>`, or
    `chore/<slug>` depending on the task — so directory and branch stay in sync
    (this prevents the branch≠dir drift that makes parallel sessions confusing).
    Use your environment's native worktree tool if it has one; otherwise:
    `git worktree add .worktrees/<slug> -b <prefix>/<slug> <base>` and `cd` into it.
 
-5. **Confirm and begin.** Report the worktree path, the branch, and the base it was
+6. **Confirm and begin.** Report the worktree path, the branch, and the base it was
    cut from. Then start the task using the **Compound Engineering (`/ce-*`) skills by
    default** — for anything non-trivial (3+ steps or an architectural decision),
    run `/ce-brainstorm` to explore requirements, then `/ce-plan`, then implement
