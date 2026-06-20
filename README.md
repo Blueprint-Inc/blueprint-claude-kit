@@ -368,7 +368,7 @@ Total open: 12 | Ready: 7 | Blocked: 5
 **What it does:**
 1. Identifies the repo and its base branch (`staging` for blueprintos, the default branch otherwise)
 2. Refreshes the base (`checkout` → `fetch --prune` → `pull --ff-only`); stops if the tree is dirty rather than discarding anything
-3. Creates an isolated worktree with a `feat/`/`fix/`/`chore/` branch whose name matches the directory
+3. Scans other active worktrees for overlap (warns if one is editing files this task will touch), then creates an isolated worktree with a `feat/`/`fix/`/`chore/` branch whose name matches the directory
 4. Confirms path/branch/base, then begins the work using the **Compound Engineering (`/ce-*`) skills by default** for non-trivial tasks (`/ce-brainstorm` → `/ce-plan` → implement → `/ce-code-review`), preferred over their `superpowers:*` equivalents
 
 > /start-work fix the commission rounding bug on the salesperson view
@@ -381,7 +381,7 @@ Total open: 12 | Ready: 7 | Blocked: 5
 
 **What it does:**
 1. Verifies you're in a worktree (won't push from the main checkout)
-2. Shows the diff vs base, commits with conventions + co-author trailer (asks first if anything looks off)
+2. Shows the diff vs base and runs a **clobber check** (warns if another worktree has uncommitted/unmerged edits to files you changed), then commits with conventions + co-author trailer (asks first if anything looks off)
 3. Opens a PR targeting the correct base branch (`staging` for blueprintos)
 4. Reports the PR URL, then removes the worktree and prunes on your OK
 5. Never force-deletes branches or deletes remote branches

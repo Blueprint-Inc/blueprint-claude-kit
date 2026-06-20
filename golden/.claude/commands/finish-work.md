@@ -21,17 +21,26 @@ worktree created by `/start-work`.
    the default branch otherwise) and run `git status` plus
    `git diff --stat <base>...HEAD`. Summarize the change in a sentence or two.
 
-3. **Commit.** Stage and commit any uncommitted work with a clear, specific message
+3. **Clobber check against other worktrees** (they share this repo's `.git` but are
+   invisible from your worktree). List your changed paths —
+   `git diff --name-only <base>...HEAD` — they're repo-relative. For every *other*
+   worktree (`git worktree list`), gather its in-flight paths: uncommitted
+   (`git -C <path> status --porcelain`) plus committed-but-unmerged
+   (`git -C <path> diff --name-only <base>...HEAD`). If any path overlaps yours,
+   **WARN clearly** — name the file and the other branch/worktree — so you can
+   coordinate before the merge clobbers their work. Advisory: proceed, but surface it.
+
+4. **Commit.** Stage and commit any uncommitted work with a clear, specific message
    following the repo's conventions, ending with the `Co-Authored-By` trailer.
    **Ask first** if the diff includes anything unexpected — secrets, unrelated
    files, debug/TODO strings, or generated artifacts.
 
-4. **Push + PR.** Push the branch and open a PR **targeting the base branch this was
+5. **Push + PR.** Push the branch and open a PR **targeting the base branch this was
    cut from** (staging for blueprintos, the default branch otherwise) via
    `gh pr create`. Write a value-first description: what changed and why, scaled to
    the size of the change — not a file-by-file dump.
 
-5. **Report + clean up.** Print the PR URL, then ask whether to remove the worktree
+6. **Report + clean up.** Print the PR URL, then ask whether to remove the worktree
    now or keep it until the PR merges. On confirmation, switch out of it and run
    `git worktree remove <path>` then `git worktree prune`.
 
