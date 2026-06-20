@@ -44,6 +44,7 @@ Every feature flows through this pipeline. You don't have to use every step ever
 | Medium feature (hours) | `/ce-brainstorm` → `/ce-plan` → `/create-issues` → implement → `/ce-code-review` |
 | Large feature (days) | Full pipeline: brainstorm → plan → issues → `/wiggum` → review → close |
 | Backlog grooming | `/triage` |
+| Isolated work session | `/start-work <task>` → implement → `/finish-work` |
 
 ---
 
@@ -357,6 +358,35 @@ Total open: 12 | Ready: 7 | Blocked: 5
 3. Configures CLAUDE.md with validation commands, project structure, and workflow section
 4. Sets up `compound-engineering.local.md` with the right review agents for your stack
 5. Customizes `agent_docs/issue-conventions.md` with project-specific scopes
+
+---
+
+### `/start-work` — Isolated Work Session
+
+**When to use:** At the start of any session that will edit code and might run alongside other sessions on the same repo. Skip it for read-only or quick-answer sessions.
+
+**What it does:**
+1. Identifies the repo and its base branch (`staging` for blueprintos, the default branch otherwise)
+2. Refreshes the base (`checkout` → `fetch --prune` → `pull --ff-only`); stops if the tree is dirty rather than discarding anything
+3. Creates an isolated worktree with a `feat/`/`fix/`/`chore/` branch whose name matches the directory
+4. Confirms path/branch/base, then begins the work using the **Compound Engineering (`/ce-*`) skills by default** for non-trivial tasks (`/ce-brainstorm` → `/ce-plan` → implement → `/ce-code-review`), preferred over their `superpowers:*` equivalents
+
+> /start-work fix the commission rounding bug on the salesperson view
+
+---
+
+### `/finish-work` — Ship & Clean Up
+
+**When to use:** When the work in a `/start-work` worktree is done and ready to ship.
+
+**What it does:**
+1. Verifies you're in a worktree (won't push from the main checkout)
+2. Shows the diff vs base, commits with conventions + co-author trailer (asks first if anything looks off)
+3. Opens a PR targeting the correct base branch (`staging` for blueprintos)
+4. Reports the PR URL, then removes the worktree and prunes on your OK
+5. Never force-deletes branches or deletes remote branches
+
+> /finish-work
 
 ---
 

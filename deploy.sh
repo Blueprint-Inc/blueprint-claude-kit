@@ -183,7 +183,7 @@ fi
 
 echo ""
 echo "Installing commands..."
-for cmd in wiggum create-issues close-issue triage bootstrap-project deploy-blueprint-claude; do
+for cmd in wiggum create-issues close-issue triage bootstrap-project deploy-blueprint-claude start-work finish-work; do
     src="$GOLDEN/.claude/commands/$cmd.md"
     dst="$TARGET/.claude/commands/$cmd.md"
     rel=".claude/commands/$cmd.md"
@@ -583,6 +583,8 @@ echo "  /wiggum          — Autonomous dev loop"
 echo "  /create-issues   — Plan to GitHub issues"
 echo "  /close-issue     — Quality gate for closure"
 echo "  /triage          — Backlog analysis"
+echo "  /start-work      — Start an isolated worktree session"
+echo "  /finish-work     — Commit, PR, and clean up the worktree"
 echo "  /pomo            — Post-mortem & lessons"
 echo "  /deploy-blueprint-claude — Update from blueprint-claude-kit"
 echo "  /ce-brainstorm   — Explore requirements (from compound-engineering plugin)"
