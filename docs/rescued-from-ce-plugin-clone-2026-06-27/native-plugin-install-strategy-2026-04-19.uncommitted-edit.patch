@@ -1,0 +1,15 @@
+diff --git a/docs/solutions/integrations/native-plugin-install-strategy-2026-04-19.md b/docs/solutions/integrations/native-plugin-install-strategy-2026-04-19.md
+index c382bd9e..97ac3048 100644
+--- a/docs/solutions/integrations/native-plugin-install-strategy-2026-04-19.md
++++ b/docs/solutions/integrations/native-plugin-install-strategy-2026-04-19.md
+@@ -675,6 +675,10 @@ Cleanup should cover:
+ - Any CE-owned flat shared skills under `~/.agents/skills/*` from older experiments or installs
+ - Any future CE-owned extension install if we need to uninstall/reinstall a broken pre-release
+ 
++## Related
++
++- `docs/solutions/skill-design/ship-ce-dependent-skill-via-existing-kit-layer.md` — the additive-private-skill complement to this doc: rather than distributing CE itself, *layer* a single self-contained CE-dependent skill on top of each dev's existing CE install (e.g. via a team kit's `golden/` + `deploy.sh`), which avoids a fork when the team already runs CE.
++
+ ## Sources
+ 
+ - Claude/Copilot marketplace metadata: `.claude-plugin/marketplace.json`
