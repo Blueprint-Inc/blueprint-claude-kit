@@ -35,12 +35,29 @@ worktree created by `/start-work`.
    **Ask first** if the diff includes anything unexpected — secrets, unrelated
    files, debug/TODO strings, or generated artifacts.
 
-5. **Push + PR.** Push the branch and open a PR **targeting the base branch this was
+5. **Find related issues this work closes.** Catch issues the change resolves but
+   nobody linked. Pull open issues — `gh issue list --state open --json number,title,labels,body`
+   (or, in Task-Tracker mode, scan `tasks/todo.md` for active `T-NN` rows). Match
+   them against this branch's slug, the commit subjects (`git log <base>..HEAD --format='%s'`),
+   and the changed file areas; surface every plausible hit as `#<n> — <title>` with a
+   one-line *why it matched*. For each, decide:
+   - **Close on merge** — add `Closes #<n>` to the PR body, but ONLY when the PR
+     targets the repo's **default branch**. `Closes` does nothing on a non-default
+     base, so for blueprintos staging PRs reference the issue in the body instead and
+     plan to close it after merge (via `/close-issue` or a summary comment).
+   - **Don't close** — if the issue is a monitoring / `in-staging` item, or its
+     acceptance criteria say to close only after a soak period ("confirm 1–2 weeks",
+     "monitor for recurrence"), link it but leave it open. Default to NOT closing when
+     unsure — surfacing a missed issue is the win; premature closure is a regression.
+   Confirm the close list with the user before baking any `Closes #<n>` into the PR.
+
+6. **Push + PR.** Push the branch and open a PR **targeting the base branch this was
    cut from** (staging for blueprintos, the default branch otherwise) via
    `gh pr create`. Write a value-first description: what changed and why, scaled to
-   the size of the change — not a file-by-file dump.
+   the size of the change — not a file-by-file dump. Include the `Closes #<n>` lines
+   agreed in step 5 (only when the PR targets the default branch).
 
-6. **Report + clean up.** Print the PR URL, then ask whether to remove the worktree
+7. **Report + clean up.** Print the PR URL, then ask whether to remove the worktree
    now or keep it until the PR merges. On confirmation, switch out of it and run
    `git worktree remove <path>` then `git worktree prune`.
 
