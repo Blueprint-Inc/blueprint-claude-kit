@@ -382,9 +382,10 @@ Total open: 12 | Ready: 7 | Blocked: 5
 **What it does:**
 1. Verifies you're in a worktree (won't push from the main checkout)
 2. Shows the diff vs base and runs a **clobber check** (warns if another worktree has uncommitted/unmerged edits to files you changed), then commits with conventions + co-author trailer (asks first if anything looks off)
-3. Opens a PR targeting the correct base branch (`staging` for blueprintos)
-4. Reports the PR URL, then removes the worktree and prunes on your OK
-5. Never force-deletes branches or deletes remote branches
+3. **Finds related open issues** the work resolves but nobody linked — matches against the branch slug, commit subjects, and changed files, then suggests `Closes #N` (only auto-closes on PRs to the default branch; for staging PRs it links + flags for manual close, and won't prematurely close monitoring/soak-period issues)
+4. Opens a PR targeting the correct base branch (`staging` for blueprintos), carrying the agreed `Closes #N` lines
+5. Reports the PR URL, then removes the worktree and prunes on your OK
+6. Never force-deletes branches or deletes remote branches
 
 > /finish-work
 
