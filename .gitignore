@@ -5,6 +5,8 @@
 /agent_docs/
 /compound-engineering.local.md
 /tasks/
+/CLAUDE.md
+/AGENTS.md
 
 # Per-deploy state + tooling output
 .blueprint-kit-version
