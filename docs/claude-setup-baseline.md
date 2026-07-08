@@ -51,6 +51,24 @@ Raising the cap raises every developer's per-session cost; duplicates should be
 retired at the YAML source (`confidence: 0.1`), and every retirement needs a
 verified surviving keeper.
 
+## Branch/worktree cleanup permissions
+
+Keep the destructive denies (`git branch -D`, remote branch deletion) — they
+force squash-merge verification through the vetted script instead of model
+judgment. Then allow the script itself, so you can say "run the branch
+cleanup" in any session and Claude executes it without classifier friction:
+
+```json
+"Bash(bash /Users/<you>/Projects/blueprint-claude-kit/scripts/weekly-git-cleanup.sh:*)",
+"Bash(/Users/<you>/Projects/blueprint-claude-kit/scripts/weekly-git-cleanup.sh:*)"
+```
+
+Add both lines to `permissions.allow` in `~/.claude/settings.json` with your
+username in the path. The safety tiers (merged-only, PR-verified force
+deletes, dirty-worktree skips, SHA logging) are enforced by the script, not by
+the model — that's the point. The Monday launchd job (`--install`) covers the
+recurring case regardless.
+
 ## Permission hygiene
 
 - **Never approve a command whose text contains a secret** (API token in a curl
