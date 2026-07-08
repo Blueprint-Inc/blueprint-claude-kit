@@ -46,7 +46,16 @@ repo's main checkout.
    Use your environment's native worktree tool if it has one; otherwise:
    `git worktree add .worktrees/<slug> -b <prefix>/<slug> <base>` and `cd` into it.
 
-6. **Confirm and begin.** Report the worktree path, the branch, and the base it was
+6. **Bootstrap per-machine files (if the project provides a script).** A fresh
+   worktree contains only *tracked* files, so every gitignored per-machine artifact
+   (local config, installed dependencies, local credentials) is absent — the project
+   often can't build, run its tests, or reach a local DB until they're restored. If
+   the new worktree contains an executable `scripts/worktree-setup.sh`, run it
+   (`bash scripts/worktree-setup.sh`) and report its output. It should be idempotent
+   (a no-op when nothing needs restoring). Projects without that script skip this
+   step. Keep all project-specific bootstrap logic inside the script, never here.
+
+7. **Confirm and begin.** Report the worktree path, the branch, and the base it was
    cut from. Then start the task using the **Compound Engineering (`/ce-*`) skills by
    default** — for anything non-trivial (3+ steps or an architectural decision),
    run `/ce-brainstorm` to explore requirements, then `/ce-plan`, then implement
