@@ -33,8 +33,9 @@ marketplaces doubles its context cost silently.
 ## Skill scoping
 
 - `~/.claude/skills/` (global) is for **dev tooling only** — every skill
-  description there loads into every session in every project. Baseline keeps:
-  `deploy-blueprint-claude`, `gitnexus-*`.
+  description there loads into every session in every project. Baseline keeps
+  just `deploy-blueprint-claude` (the `gitnexus-*` skills were removed with the
+  rest of GitNexus — see below).
 - The marketing pack (ads-*, firecrawl-*, seo, copywriting, banana, etc. — 94
   skills + 10 agents, ~10.5k tokens of descriptions) lives in
   `styleblueprint-marketing/.claude/` with an SEO subset in
