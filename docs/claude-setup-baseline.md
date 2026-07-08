@@ -79,6 +79,24 @@ recurring case regardless.
   narrow ones accumulated by daily approvals; loop fragments (`Bash(done)`)
   are junk. `/fewer-permission-prompts` can rebuild a clean minimal list.
 
+## GitNexus: removed (2026-07-08)
+
+Measured over 459 sessions / 3–4 months: **22 actual graph tool calls**
+(9 `impact`, 13 `detect_changes`) versus **4,130 stale-index nags** injected
+by its hooks and **30 sessions detoured into multi-minute re-indexing**. The
+"MUST run impact analysis before editing" CLAUDE.md mandates were followed in
+~2% of sessions — dead instruction weight the model was perpetually violating.
+
+Removed: the Grep/Glob/Bash hooks (this was the nag source), 7 global skills,
+the MCP server, ~1GB of `.gitnexus/` indexes, and the CLAUDE.md/AGENTS.md
+sections in bender-automation, blueprint-code-coach, blueprintos, prepotente,
+and styleblueprint-audience-warehouse. If you have GitNexus hooks in your own
+`~/.claude/settings.json`, remove them too.
+
+Lesson for future tooling: before adopting anything that hooks every tool
+call or adds MUST-rules to CLAUDE.md, define how you'll measure whether it's
+used — transcript grep for actual tool calls vs. injected noise settles it.
+
 ## Verifying your session weight
 
 Run `/context` in a session — if system-prompt overhead is well above ~15k
