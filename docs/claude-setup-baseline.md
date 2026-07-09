@@ -33,8 +33,9 @@ marketplaces doubles its context cost silently.
 ## Skill scoping
 
 - `~/.claude/skills/` (global) is for **dev tooling only** — every skill
-  description there loads into every session in every project. Baseline keeps:
-  `deploy-blueprint-claude`, `gitnexus-*`.
+  description there loads into every session in every project. Baseline keeps
+  just `deploy-blueprint-claude` (the `gitnexus-*` skills were removed with the
+  rest of GitNexus — see below).
 - The marketing pack (ads-*, firecrawl-*, seo, copywriting, banana, etc. — 94
   skills + 10 agents, ~10.5k tokens of descriptions) lives in
   `styleblueprint-marketing/.claude/` with an SEO subset in
@@ -96,6 +97,58 @@ and styleblueprint-audience-warehouse. If you have GitNexus hooks in your own
 Lesson for future tooling: before adopting anything that hooks every tool
 call or adds MUST-rules to CLAUDE.md, define how you'll measure whether it's
 used — transcript grep for actual tool calls vs. injected noise settles it.
+
+## Round 2 (2026-07-08): unused MCP servers and instruction mandates
+
+Same measurement discipline as the GitNexus removal, applied to MCP servers and
+standing CLAUDE.md mandates. Usage counts are actual tool calls across 459
+session transcripts on one machine.
+
+**MCP servers removed** (from `~/.claude.json` top-level + project entries and
+`~/.claude/settings.json`), archived locally first:
+
+| Server | Lifetime calls | Why removed |
+|---|---|---|
+| context7 | 0 | Never called; also had a paired `~/.claude/rules/context7.md` "always use" mandate (archived earlier the same day) |
+| google-dev-knowledge | 0 | Never called |
+| google-sheets | 0 | Never called |
+| gsc | 2 | `gws` CLI + direct API cover it |
+| qmd (MCP server) | 7 | The qmd **CLI** was used ~50× over the same window — the CLI stays, the MCP server goes |
+| n8n-mcp | 0 | Registration pointed at a deleted directory |
+
+**Kept:** `analytics-mcp` (19 calls), `nanobanana-mcp` (image gen), and the
+client WordPress servers (`ncs-wordpress`, `turniptruck-wordpress`) — out of
+scope. Also pruned **5 stale project entries** (directories that no longer
+exist) from `~/.claude.json`.
+
+**Mandates demoted:**
+
+- The global `~/.claude/CLAUDE.md` "always use qmd first" mandate → a plain
+  tool mention. qmd stays available; it's no longer an always-first rule the
+  model was following ~10% of the time.
+- The workspace `~/Projects/CLAUDE.md` "Workflow Orchestration" and "Task
+  Management" sections (plan-mode-default, `tasks/todo.md` ritual) → a short
+  habits list that points workflow ownership at Compound Engineering, which
+  those sections duplicated and contradicted.
+
+### Replicating on another dev machine
+
+1. **Re-check usage first — nonzero is a per-machine veto.** Before removing a
+   server, grep your own transcripts; if *you* use it, keep it:
+   ```
+   for s in context7 google-dev-knowledge google-sheets gsc n8n-mcp; do \
+     printf '%s: ' "$s"; \
+     grep -rho "\"name\":\"mcp__${s}[_-]*[a-zA-Z_]*\"" ~/.claude/projects/ 2>/dev/null | wc -l; \
+   done
+   ```
+2. Back up `~/.claude.json` and `~/.claude/settings.json`, then remove the
+   server blocks and any stale project entries.
+3. Apply the two CLAUDE.md demotions above.
+
+**Never commit the archived MCP config blocks.** At least one (context7)
+embeds an API key and gsc references a client-secrets file. Archived blocks
+stay in the local `~/.claude/backups/` path — this doc records server names,
+counts, and the re-check grep only, never the JSON.
 
 ## Verifying your session weight
 
