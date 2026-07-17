@@ -362,6 +362,40 @@ LESSONS_EOF
 CE_EOF
         echo "Created compound-engineering.local.md (edit to match your stack)"
     fi
+
+    # Ensure CE local config prefers Claude as the cross-model adversarial peer
+    # (gitignored machine-local; used by /ce-code-review from /deploy and /ship).
+    mkdir -p "$TARGET/.compound-engineering"
+    CE_CFG="$TARGET/.compound-engineering/config.local.yaml"
+    if [ -f "$CE_CFG" ]; then
+        if grep -qE '^[[:space:]]*#?[[:space:]]*cross_model_peer:' "$CE_CFG"; then
+            # Portable upsert (macOS BSD sed)
+            sed -i.bak -E 's/^[[:space:]]*#?[[:space:]]*cross_model_peer:.*/cross_model_peer: claude/' "$CE_CFG" && rm -f "${CE_CFG}.bak"
+            echo "Set cross_model_peer: claude in .compound-engineering/config.local.yaml"
+        else
+            printf '\n# Cross-model adversarial peer for /ce-code-review (Grok/other host → Claude Code)\ncross_model_peer: claude\n' >> "$CE_CFG"
+            echo "Appended cross_model_peer: claude to .compound-engineering/config.local.yaml"
+        fi
+    else
+        cat > "$CE_CFG" << 'CECFG_EOF'
+# Compound Engineering -- local config (gitignored)
+# Cross-model adversarial peer for /ce-code-review from /deploy and /ship.
+# Prefer Claude Code as an independent model family (especially when host is Grok).
+cross_model_peer: claude
+CECFG_EOF
+        echo "Created .compound-engineering/config.local.yaml (cross_model_peer: claude)"
+    fi
+
+    # Ensure machine-local CE config is gitignored
+    GI="$TARGET/.gitignore"
+    if [ -f "$GI" ]; then
+        if ! grep -qE '^\.compound-engineering/\*\.local\.yaml$' "$GI" \
+           && ! grep -qE '^\.compound-engineering/config\.local\.yaml$' "$GI" \
+           && ! grep -qE '^\.compound-engineering/' "$GI"; then
+            printf '\n# Compound Engineering machine-local config\n.compound-engineering/*.local.yaml\n' >> "$GI"
+            echo "Added .compound-engineering/*.local.yaml to .gitignore"
+        fi
+    fi
 fi
 
 # --- Handle CLAUDE.md ---
@@ -574,7 +608,7 @@ fi
 echo ""
 echo "Next steps:"
 echo "  1. cd $TARGET"
-echo "  2. Edit compound-engineering.local.md for your stack"
+echo "  2. Edit compound-engineering.local.md for your stack (cross_model_peer: claude is in .compound-engineering/config.local.yaml)"
 echo "  3. Open in Claude Code"
 echo "  4. Run /bootstrap-project to configure project-specific settings"
 echo ""
