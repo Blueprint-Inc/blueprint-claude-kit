@@ -363,27 +363,30 @@ CE_EOF
         echo "Created compound-engineering.local.md (edit to match your stack)"
     fi
 
-    # Ensure CE local config prefers Claude as the cross-model adversarial peer
+    # Seed a default cross-model adversarial peer for /ce-code-review
     # (gitignored machine-local; used by /ce-code-review from /deploy and /ship).
+    # The peer is host-mapped at review time by /deploy and /ship
+    # (Claude Code host → codex, Grok host → claude), which upsert this key per
+    # run — so only seed a Grok-side default when the key is absent, and never
+    # clobber an existing value.
     mkdir -p "$TARGET/.compound-engineering"
     CE_CFG="$TARGET/.compound-engineering/config.local.yaml"
     if [ -f "$CE_CFG" ]; then
-        if grep -qE '^[[:space:]]*#?[[:space:]]*cross_model_peer:' "$CE_CFG"; then
-            # Portable upsert (macOS BSD sed)
-            sed -i.bak -E 's/^[[:space:]]*#?[[:space:]]*cross_model_peer:.*/cross_model_peer: claude/' "$CE_CFG" && rm -f "${CE_CFG}.bak"
-            echo "Set cross_model_peer: claude in .compound-engineering/config.local.yaml"
+        if grep -qE '^[[:space:]]*cross_model_peer:' "$CE_CFG"; then
+            echo "Kept existing cross_model_peer in .compound-engineering/config.local.yaml (host-mapped at review time)"
         else
-            printf '\n# Cross-model adversarial peer for /ce-code-review (Grok/other host → Claude Code)\ncross_model_peer: claude\n' >> "$CE_CFG"
-            echo "Appended cross_model_peer: claude to .compound-engineering/config.local.yaml"
+            printf '\n# Default cross-model adversarial peer for /ce-code-review.\n# /deploy and /ship upsert this per host (Claude Code → codex, Grok → claude).\ncross_model_peer: claude\n' >> "$CE_CFG"
+            echo "Appended default cross_model_peer: claude to .compound-engineering/config.local.yaml"
         fi
     else
         cat > "$CE_CFG" << 'CECFG_EOF'
 # Compound Engineering -- local config (gitignored)
-# Cross-model adversarial peer for /ce-code-review from /deploy and /ship.
-# Prefer Claude Code as an independent model family (especially when host is Grok).
+# Default cross-model adversarial peer for /ce-code-review from /deploy and /ship.
+# /deploy and /ship upsert this per host at review time:
+#   Claude Code host -> codex, Grok host -> claude.
 cross_model_peer: claude
 CECFG_EOF
-        echo "Created .compound-engineering/config.local.yaml (cross_model_peer: claude)"
+        echo "Created .compound-engineering/config.local.yaml (default cross_model_peer: claude)"
     fi
 
     # Ensure machine-local CE config is gitignored
@@ -608,7 +611,7 @@ fi
 echo ""
 echo "Next steps:"
 echo "  1. cd $TARGET"
-echo "  2. Edit compound-engineering.local.md for your stack (cross_model_peer: claude is in .compound-engineering/config.local.yaml)"
+echo "  2. Edit compound-engineering.local.md for your stack (cross_model_peer default is in .compound-engineering/config.local.yaml; /deploy and /ship host-map it: Claude Code → codex, Grok → claude)"
 echo "  3. Open in Claude Code"
 echo "  4. Run /bootstrap-project to configure project-specific settings"
 echo ""
