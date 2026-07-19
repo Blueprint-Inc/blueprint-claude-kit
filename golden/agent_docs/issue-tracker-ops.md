@@ -6,8 +6,10 @@
 
 **Tool:** GitHub CLI (`gh`)
 **Issue reference format:** `#NN` (e.g., `#53`)
-**Smart close syntax:** `Closes #NN`
+**Smart close syntax:** `Closes #NN` (also `Fixes` / `Resolves`; use `Refs #NN` when incomplete)
 **Dependency format:** `- Blocked by: #NN — reason`
+
+For production-ship attribution (feature PR bodies, staging→prod release PRs, SAW deploy-notifier thank-yous), see `agent_docs/issue-closes-on-prod-ship.md`.
 
 ## Operations Reference
 

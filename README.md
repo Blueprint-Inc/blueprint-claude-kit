@@ -382,12 +382,14 @@ Total open: 12 | Ready: 7 | Blocked: 5
 **What it does:**
 1. Verifies you're in a worktree (won't push from the main checkout)
 2. Shows the diff vs base and runs a **clobber check** (warns if another worktree has uncommitted/unmerged edits to files you changed), then commits with conventions + co-author trailer (asks first if anything looks off)
-3. **Finds related open issues** the work resolves but nobody linked — matches against the branch slug, commit subjects, and changed files, then suggests `Closes #N` (only auto-closes on PRs to the default branch; for staging PRs it links + flags for manual close, and won't prematurely close monitoring/soak-period issues)
-4. Opens a PR targeting the correct base branch (`staging` for blueprintos), carrying the agreed `Closes #N` lines
+3. **Finds related open issues** the work resolves but nobody linked — matches against the branch slug, commit subjects, and changed files, then puts explicit `Closes #N` / `Refs #N` lines in an `## Issues` PR body section (never invents numbers; never title-only). GitHub auto-closes only on the default branch; on BlueprintOS, feature PRs still carry `Closes` so the staging→prod release PR and SAW deploy-notifier can attribute thank-yous. See `agent_docs/issue-closes-on-prod-ship.md`.
+4. Opens a PR targeting the correct base branch (`staging` for blueprintos), carrying the agreed issue lines
 5. Reports the PR URL, then removes the worktree and prunes on your OK
 6. Never force-deletes branches or deletes remote branches
 
 > /finish-work
+
+**BlueprintOS note:** Full staging ship + Travis prod gate live as BOS-only `/ship` and `/release` (not kit golden). Kit documents the `Closes #N` rules; BOS owns the release-PR body automation.
 
 ---
 
@@ -446,6 +448,7 @@ These files are loaded on-demand by commands, not every session. This keeps your
 |------|---------|----------|
 | `issue-conventions.md` | `/create-issues`, `/close-issue`, `/wiggum` | Issue title format, body template, dependency syntax |
 | `issue-tracker-ops.md` | All issue-touching commands | GitHub CLI operations table (15 commands) |
+| `issue-closes-on-prod-ship.md` | `/finish-work`, BOS `/ship`/`/release` | Collection algorithm, Closes templates, ownership, deploy-notifier why |
 | `self-improvement.md` | `/pomo`, `/ce-code-review`, `/wiggum` | Lesson format, lifecycle, pruning rules |
 | `postmortems/README.md` | After non-obvious bug fixes | Postmortem format, when to write one |
 

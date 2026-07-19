@@ -40,22 +40,30 @@ worktree created by `/start-work`.
    (or, in Task-Tracker mode, scan `tasks/todo.md` for active `T-NN` rows). Match
    them against this branch's slug, the commit subjects (`git log <base>..HEAD --format='%s'`),
    and the changed file areas; surface every plausible hit as `#<n> — <title>` with a
-   one-line *why it matched*. For each, decide:
-   - **Close on merge** — add `Closes #<n>` to the PR body, but ONLY when the PR
-     targets the repo's **default branch**. `Closes` does nothing on a non-default
-     base, so for blueprintos staging PRs reference the issue in the body instead and
-     plan to close it after merge (via `/close-issue` or a summary comment).
-   - **Don't close** — if the issue is a monitoring / `in-staging` item, or its
-     acceptance criteria say to close only after a soak period ("confirm 1–2 weeks",
-     "monitor for recurrence"), link it but leave it open. Default to NOT closing when
-     unsure — surfacing a missed issue is the win; premature closure is a regression.
-   Confirm the close list with the user before baking any `Closes #<n>` into the PR.
+   one-line *why it matched*. **Never invent** issue numbers. For each, decide:
+   - **Fully addressed** — add `Closes #<n>` (or Fixes/Resolves) to the PR body under
+     an `## Issues` section. Prefer Closes for completed user-feedback issues.
+   - **Partial / soak / monitoring** — use `Refs #<n>` or “Related to #<n>” instead of
+     Closes when acceptance criteria say wait (soak period, `in-staging` monitor).
+     Default to Refs when unsure — premature Closes is a regression.
+
+   **Always put keyword lines in the PR body** — do not rely on title-only `(#N)`.
+   GitHub auto-closes only when the PR merges to the **default branch**. On
+   BlueprintOS, feature PRs target `staging` (not default); `Closes` there still
+   matters for discovery: the staging→prod release PR collector and SAW
+   deploy-notifier read these lines so prod ships can auto-close and send
+   thank-yous. See `agent_docs/issue-closes-on-prod-ship.md`. For BOS full ship
+   (promotion-window, merge, deploy watch), use BOS `/ship` rather than this
+   command alone.
+
+   Confirm the list with the user before baking keywords into the PR.
 
 6. **Push + PR.** Push the branch and open a PR **targeting the base branch this was
    cut from** (staging for blueprintos, the default branch otherwise) via
    `gh pr create`. Write a value-first description: what changed and why, scaled to
-   the size of the change — not a file-by-file dump. Include the `Closes #<n>` lines
-   agreed in step 5 (only when the PR targets the default branch).
+   the size of the change — not a file-by-file dump. Always include the agreed
+   `## Issues` section with `Closes #<n>` / `Refs #<n>` lines from step 5. If exactly
+   one primary issue and the title lacks it, append ` (#N)` (house style).
 
 7. **Report + clean up.** Print the PR URL, then ask whether to remove the worktree
    now or keep it until the PR merges. On confirmation, switch out of it and run

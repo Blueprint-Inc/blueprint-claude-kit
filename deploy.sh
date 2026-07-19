@@ -267,7 +267,7 @@ fi
 
 echo ""
 echo "Installing agent_docs..."
-for doc in issue-conventions issue-tracker-ops self-improvement canonical-skill-map postmortems/README; do
+for doc in issue-conventions issue-tracker-ops self-improvement canonical-skill-map issue-closes-on-prod-ship postmortems/README; do
     src="$GOLDEN/agent_docs/$doc.md"
     dst="$TARGET/agent_docs/$doc.md"
     rel="agent_docs/$doc.md"
@@ -456,7 +456,7 @@ For the full skill map, see `agent_docs/canonical-skill-map.md`.
 
 **Tool:** GitHub CLI (`gh`) | **Format:** `#NN` | **Smart close:** `Closes #NN` | **Deps:** `- Blocked by: #NN — reason`
 
-For issue format specs, see `agent_docs/issue-conventions.md`. For CLI operations, see `agent_docs/issue-tracker-ops.md`.
+For issue format specs, see `agent_docs/issue-conventions.md`. For CLI operations, see `agent_docs/issue-tracker-ops.md`. For `Closes #N` on feature and release PRs (GitHub auto-close + deploy-notifier thank-yous), see `agent_docs/issue-closes-on-prod-ship.md`.
 
 ### Postmortems
 
@@ -479,6 +479,7 @@ Maintain `.claude/lessons.md` with patterns from corrections and reviews. See `a
 | `agent_docs/canonical-skill-map.md` | Choosing between overlapping skills |
 | `agent_docs/issue-conventions.md` | Creating or editing issues |
 | `agent_docs/issue-tracker-ops.md` | Running issue tracker CLI commands |
+| `agent_docs/issue-closes-on-prod-ship.md` | Closes #N on PRs / prod ships (auto-close + deploy-notifier) |
 | `agent_docs/self-improvement.md` | Updating lessons |
 | `agent_docs/postmortems/` | Debugging recurring or non-obvious bugs |
 WORKFLOW_EOF
