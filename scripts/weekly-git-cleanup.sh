@@ -171,10 +171,10 @@ for repo in "$ROOT"/*/; do
 			sha="$(git rev-parse --short "$wt_branch" 2>/dev/null)"
 			if [ "$MODE" = "apply" ]; then
 				git worktree remove "$wt_path" 2>/dev/null && git branch -D "$wt_branch" >/dev/null 2>&1 \
-					&& { echo "  [removed] worktree $wt_path + branch $wt_branch ($sha) $why"; wt_removed=$((wt_removed+1)); deleted=$((deleted+1)); }
+					&& { echo "  [removed] worktree $wt_path + branch $wt_branch ($sha) $why"; wt_removed=$((wt_removed+1)); }
 			else
 				echo "  [would remove] worktree $wt_path + branch $wt_branch ($sha) $why"
-				wt_removed=$((wt_removed+1)); deleted=$((deleted+1))
+				wt_removed=$((wt_removed+1))
 			fi
 		else
 			echo "  [skip] worktree not merged: $wt_path ($wt_branch)"; skipped=$((skipped+1))
@@ -231,9 +231,11 @@ for repo in "$ROOT"/*/; do
 	fi
 
 	if [ "$deleted" -gt 0 ] || [ "$wt_removed" -gt 0 ] || [ "$skipped" -gt 0 ]; then
-		echo "[$name] branches: $deleted, worktrees: $wt_removed, kept/skipped: $skipped"
+		# Counts are disjoint: $deleted is standalone branches, $wt_removed is
+		# worktrees (each of which also deletes its own branch).
+		echo "[$name] branches: $deleted, worktrees(+branch): $wt_removed, kept/skipped: $skipped"
 	fi
 	total_deleted=$((total_deleted+deleted)); total_wt_removed=$((total_wt_removed+wt_removed)); total_skipped=$((total_skipped+skipped))
 done
 
-echo "=== TOTAL mode=$MODE: $total_deleted branches, $total_wt_removed worktrees, $total_skipped kept/skipped ==="
+echo "=== TOTAL mode=$MODE: $total_deleted branches, $total_wt_removed worktrees(+branch), $total_skipped kept/skipped ==="
