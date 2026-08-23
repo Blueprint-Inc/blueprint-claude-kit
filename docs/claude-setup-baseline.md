@@ -66,9 +66,11 @@ cleanup" in any session and Claude executes it without classifier friction:
 
 Add both lines to `permissions.allow` in `~/.claude/settings.json` with your
 username in the path. The safety tiers (merged-only, PR-verified force
-deletes, dirty-worktree skips, SHA logging) are enforced by the script, not by
+deletes, dirty-unmerged skips, SHA logging) are enforced by the script, not by
 the model — that's the point. The Monday launchd job (`--install`) covers the
-recurring case regardless.
+recurring case regardless. A sibling daily job (`kill-stale-dev-servers.sh
+--install`, 07:00) kills leftover `vite` / `npm run dev` processes older than
+24 hours. Merged worktrees are force-removed even if dirty.
 
 ## Permission hygiene
 
