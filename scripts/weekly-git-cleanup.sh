@@ -5,8 +5,10 @@
 #   - Tier 1: `git branch -d` only (refuses anything not fully merged)
 #   - Tier 2: branches are force-deleted ONLY after `gh` confirms the branch
 #     tip commit belongs to a MERGED pull request
-#   - Worktrees: removed only if the checkout is clean AND its branch
-#     qualifies under tier 1 or 2; dirty/detached/unknown are reported only
+#   - Worktrees: removed when the branch qualifies under tier 1 or 2.
+#     Dirty checkouts of merged branches are force-removed (leftover Vite
+#     output / agent scratch must not keep a merged worktree alive).
+#     Dirty unmerged worktrees are reported only.
 #   - Protected: main, master, staging, develop, production, current branch
 #   - Every deletion is logged with its SHA (recovery: git branch <name> <sha>)
 #
@@ -14,6 +16,7 @@
 #   weekly-git-cleanup.sh              # dry run (default): report, delete nothing
 #   weekly-git-cleanup.sh --apply      # actually delete
 #   weekly-git-cleanup.sh --install    # install weekly launchd job (Mon 09:00)
+#                                      # and the daily stale-dev-server job (07:00)
 #
 # Config via env: CLEANUP_ROOT (default ~/Projects)
 set -uo pipefail
@@ -22,6 +25,7 @@ ROOT="${CLEANUP_ROOT:-$HOME/Projects}"
 MODE="dry-run"
 LOG_DIR="$HOME/.config/blueprint-git-cleanup"
 PROTECTED="main master staging develop production"
+KILLER="$(cd "$(dirname "$0")" && pwd)/kill-stale-dev-servers.sh"
 
 case "${1:-}" in
 	--apply) MODE="apply" ;;
@@ -58,6 +62,10 @@ PLISTEOF
 		launchctl bootout "gui/$(id -u)/com.blueprint.git-cleanup" 2>/dev/null
 		launchctl bootstrap "gui/$(id -u)" "$PLIST"
 		echo "Installed: runs Mondays 09:00, logs to $LOG_DIR/cleanup.log"
+		KILLER="$(cd "$(dirname "$0")" && pwd)/kill-stale-dev-servers.sh"
+		if [ -f "$KILLER" ]; then
+			bash "$KILLER" --install
+		fi
 		exit 0
 		;;
 	"") ;;
@@ -153,13 +161,14 @@ for repo in "$ROOT"/*/; do
 
 	deleted=0; wt_removed=0; skipped=0
 
-	# --- Worktrees: remove clean checkouts of deletable branches ---
+	# --- Worktrees: remove merged-branch checkouts (force if dirty) ---
 	git worktree list --porcelain | awk '/^worktree /{wt=$2} /^branch /{sub("refs/heads/","",$2); print wt"\t"$2}' > /tmp/wt-list.$$ || true
 	while IFS=$'\t' read -r wt_path wt_branch; do
 		[ "$wt_path" = "$(git rev-parse --show-toplevel 2>/dev/null)" ] && continue
 		[ -z "$wt_branch" ] && continue
 		is_protected "$wt_branch" && continue
-		[ -n "$(git -C "$wt_path" status --porcelain 2>/dev/null)" ] && { echo "  [skip] worktree dirty: $wt_path ($wt_branch)"; skipped=$((skipped+1)); continue; }
+		dirty=0
+		[ -n "$(git -C "$wt_path" status --porcelain 2>/dev/null)" ] && dirty=1
 		deletable=0; why=""
 		if git merge-base --is-ancestor "$wt_branch" "$default" 2>/dev/null; then
 			deletable=1; why="merged"
@@ -169,13 +178,26 @@ for repo in "$ROOT"/*/; do
 		fi
 		if [ "$deletable" = 1 ]; then
 			sha="$(git rev-parse --short "$wt_branch" 2>/dev/null)"
+			dirtymark=""
+			[ "$dirty" = 1 ] && dirtymark="dirty "
 			if [ "$MODE" = "apply" ]; then
-				git worktree remove "$wt_path" 2>/dev/null && git branch -D "$wt_branch" >/dev/null 2>&1 \
-					&& { echo "  [removed] worktree $wt_path + branch $wt_branch ($sha) $why"; wt_removed=$((wt_removed+1)); }
+				if [ -f "$KILLER" ]; then
+					bash "$KILLER" --apply --min-age-hours 0 --under "$wt_path" >/dev/null 2>&1 || true
+				fi
+				if git worktree remove --force "$wt_path" 2>/dev/null \
+					|| git worktree remove --force --force "$wt_path" 2>/dev/null; then
+					git branch -D "$wt_branch" >/dev/null 2>&1 || true
+					echo "  [removed] ${dirtymark}worktree $wt_path + branch $wt_branch ($sha) $why"
+					wt_removed=$((wt_removed+1))
+				else
+					echo "  [skip] worktree remove failed: $wt_path ($wt_branch)"; skipped=$((skipped+1))
+				fi
 			else
-				echo "  [would remove] worktree $wt_path + branch $wt_branch ($sha) $why"
+				echo "  [would remove] ${dirtymark}worktree $wt_path + branch $wt_branch ($sha) $why"
 				wt_removed=$((wt_removed+1))
 			fi
+		elif [ "$dirty" = 1 ]; then
+			echo "  [skip] worktree dirty: $wt_path ($wt_branch)"; skipped=$((skipped+1))
 		else
 			echo "  [skip] worktree not merged: $wt_path ($wt_branch)"; skipped=$((skipped+1))
 		fi
