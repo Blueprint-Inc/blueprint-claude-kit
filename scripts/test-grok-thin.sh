@@ -9,7 +9,15 @@ mkdir -p "$DEFAULT/installed-plugins/compound-engineering-plugin-fake/skills/ce-
 printf '# fake\n' > "$DEFAULT/installed-plugins/compound-engineering-plugin-fake/skills/ce-worktree/SKILL.md"
 printf '{}\n' > "$DEFAULT/auth.json"
 # Pretend default still has fat plugins.
-printf 'enabled = ["cloudflare", "sentry", "compound-engineering"]\n' > "$DEFAULT/config.toml"
+cat > "$DEFAULT/config.toml" <<'TOML'
+[plugins]
+enabled = ["cloudflare", "sentry", "compound-engineering"]
+[mcp_servers.blueprintos-tasks]
+url = "https://api.styleblueprint.ai/mcp"
+enabled = true
+[mcp_servers.blueprintos-tasks.headers]
+Authorization = "Bearer TESTTOKEN"
+TOML
 
 export GROK_DEFAULT_HOME="$DEFAULT"
 export GROK_THIN_HOME="$THIN"
@@ -49,17 +57,17 @@ printf '{"toolName":"search_replace","toolInput":{"target_file":"app/Foo.php"}}\
   || fail "impeccable php should fail-open"
 
 # qmd not advertised
-grep -q 'disabled = \["qmd"' "$THIN/config.toml" || fail "qmd not disabled"
+grep -q '"qmd"' "$THIN/config.toml" || fail "qmd not disabled"
 
-# Hooks json present, no Stop
-grep -q jev-pretool "$THIN/hooks/thin-session.json" || fail "jev hook json missing"
-grep -qv '"Stop"' "$THIN/hooks/thin-session.json" || true
+# No Jev PreToolUse when the key file is absent (speed). Stop hook still banned.
 python3 -c '
 import json,sys
 d=json.load(open(sys.argv[1]))
 assert "Stop" not in d["hooks"], "Stop hook must not exist"
-assert "PreToolUse" in d["hooks"]
-' "$THIN/hooks/thin-session.json" || fail "Stop hook present"
+assert "PreToolUse" not in d["hooks"], "Jev hook must not install without a key"
+' "$THIN/hooks/thin-session.json" || fail "hook json wrong without Jev key"
+grep -q 'game-animation-frames' "$THIN/config.toml" || fail "bundled game skills not disabled"
+grep -q 'TESTTOKEN' "$THIN/config.toml" || fail "BOS MCP header not copied from default home"
 
 # No secrets in templates
 ! grep -E 'bos_pat_|Bearer ey' "$KIT_ROOT/scripts/grok-thin-home/config.toml.tmpl" \

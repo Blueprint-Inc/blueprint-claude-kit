@@ -5,6 +5,7 @@ Default Grok (`$HOME/.grok`) stays until you promote.
 
 Keep-set: Compound Engineering, Impeccable, kit issue-loop skills, BlueprintOS tasks MCP, Playwright MCP.
 Operator slash commands on the thin home: `/deploy`, `/ship`, `/release`, `/start-work`, `/finish-work`, `/sb-factory-triage`.
+`/start-work` on a GitHub issue (`pick up #N`) skips brainstorm/plan scouts and goes to implement plus review.
 Operator skills: `daily-prod-errors`, `wp-bos-sync`, `whatshipped`, `open-user-issues`, `sb-factory-triage`.
 Jev is a PreToolUse hook, not a prompt skill.
 qmd is not loaded.
@@ -62,4 +63,27 @@ After the trial works:
 2. Run `bash scripts/grok-thin.sh --install-only` then `bash scripts/grok-thin.sh`.
 3. Do not change `setup.sh`. Do not rewrite their default Grok home until they promote.
 
-Jev live Choice needs the org key file (`JEV_API_KEY_FILE` or `~/.config/dev-approved-lfg/jev_api_key`). Missing key fail-opens.
+## Jev key (developers)
+
+The thin session does **not** register the Jev PreToolUse hook until this file exists:
+
+`$HOME/.config/dev-approved-lfg/jev_api_key`
+
+That is the same factory file BlueprintOS leftover bounce and Issues-readiness already use. Prefer pickup of that file over minting a second key.
+
+1. If the file is already on this machine (factory/Bender laptop), run `bash scripts/pickup-jev-key.sh` - it will chmod 600 and stop.
+2. If not, the script pulls Google Secret Manager `jev_api_key` in project `blueprint-blueprintos` (same secret leftover Jev already uses):
+
+```bash
+bash scripts/pickup-jev-key.sh
+```
+
+Equivalent one-liner if you already have gcloud:
+
+```bash
+test -s "$HOME/.config/dev-approved-lfg/jev_api_key" || { mkdir -p "$HOME/.config/dev-approved-lfg" && gcloud secrets versions access latest --secret=jev_api_key --project=blueprint-blueprintos > "$HOME/.config/dev-approved-lfg/jev_api_key" && chmod 600 "$HOME/.config/dev-approved-lfg/jev_api_key"; }
+```
+
+Need `roles/secretmanager.secretAccessor` on that secret. Never paste the key into chat, git, or `config.toml`. Then re-run `bash scripts/grok-thin.sh --install-only` so the hook is registered.
+
+Without the key, thin Grok skips Jev entirely (faster fail-open). With the key, Jev chooses among remaining tools on state-changing calls.

@@ -47,13 +47,20 @@ bundled = home / "bundled" / "skills"
 plugins = home / "installed-plugins"
 bundled.mkdir(parents=True, exist_ok=True)
 allow_frags = ("compound-engineering", "impeccable")
+skip_names = {
+    "agent-only-skill", "claude-only-skill", "default-skill",
+    "disabled-skill", "skill-one",
+}
 wanted = {}
 if plugins.exists():
     for skill_md in plugins.glob("**/skills/*/SKILL.md"):
         parts = [p.lower() for p in skill_md.parts]
         if not any(f in "/".join(parts) for f in allow_frags):
             continue
-        wanted[skill_md.parent.name] = skill_md.parent.resolve()
+        name = skill_md.parent.name
+        if name in skip_names:
+            continue
+        wanted[name] = skill_md.parent.resolve()
 linked = 0
 for dest in list(bundled.iterdir()) if bundled.exists() else []:
     if dest.is_symlink() and dest.name not in wanted:
@@ -108,11 +115,15 @@ link_cmd "$BOS_COMMANDS/ship.md" ship
 link_cmd "$BOS_COMMANDS/release.md" release
 if [ -f "$BOS_COMMANDS/start-work.md" ]; then
   link_cmd "$BOS_COMMANDS/start-work.md" start-work
+elif [ -f "$KIT_ROOT/skills/start-work/SKILL.md" ]; then
+  link_cmd "$KIT_ROOT/skills/start-work/SKILL.md" start-work
 else
   link_cmd "$GOLDEN_COMMANDS/start-work.md" start-work
 fi
 if [ -f "$BOS_COMMANDS/finish-work.md" ]; then
   link_cmd "$BOS_COMMANDS/finish-work.md" finish-work
+elif [ -f "$KIT_ROOT/skills/finish-work/SKILL.md" ]; then
+  link_cmd "$KIT_ROOT/skills/finish-work/SKILL.md" finish-work
 else
   link_cmd "$GOLDEN_COMMANDS/finish-work.md" finish-work
 fi
@@ -128,16 +139,52 @@ for d in sb-factory-triage daily-prod-errors wp-bos-sync whatshipped open-user-i
 done
 
 # KEEP_SKILL_DIRS is space-separated; unquoted so each dir is its own argv.
-python3 - "$THIN_HOME/config.toml" "$KIT_SKILLS" "$OVERLAY_SKILLS" "$IMPECCABLE_SKILL" "$FIRECRAWL_SKILLS" $KEEP_SKILL_DIRS <<'PY'
+python3 - "$THIN_HOME/config.toml" "$DEFAULT_HOME/config.toml" "$KIT_SKILLS" "$OVERLAY_SKILLS" "$IMPECCABLE_SKILL" "$FIRECRAWL_SKILLS" $KEEP_SKILL_DIRS <<'PY'
 import os, sys
-out, kit, overlay, impec, fire = sys.argv[1:6]
-extra = [p for p in sys.argv[6:] if p]
+out, default_cfg, kit, overlay, impec, fire = sys.argv[1:7]
+extra = [p for p in sys.argv[7:] if p]
 paths = [p for p in [kit, overlay, impec] + extra if p and os.path.isdir(p)]
 path_l = ",\n    ".join('"%s"' % p.replace("\\", "\\\\") for p in paths)
 ignore_dirs = [p for p in (fire, os.path.expanduser("~/.claude/skills"), os.path.expanduser("~/.cursor/skills")) if p]
 ignore_l = ",\n    ".join('"%s"' % p.replace("\\", "\\\\") for p in ignore_dirs)
 ignore_block = "ignore = [\n    %s\n]" % ignore_l if ignore_l else "ignore = []"
-body = """# Thin Grok session. Written by scripts/grok-thin.sh. No secrets.
+disabled = [
+    "qmd", "typesafe-ai", "whathappened",
+    "agent-only-skill", "claude-only-skill", "default-skill", "disabled-skill", "skill-one",
+    "game-animation-frames", "game-asset-core", "game-character-consistency",
+    "game-tilesets", "game-ui-icons", "imagine",
+    "pdf", "pptx", "docx",
+    "resume-claude", "resume-codex", "resume-cursor",
+    "build-with-ai", "create-skill", "create-workflow", "statusline",
+    "skill-design-principles", "execute-plan", "design",
+]
+disabled_l = ",\n    ".join('"%s"' % n for n in disabled)
+
+def bos_headers(path):
+    try:
+        lines = open(path).read().splitlines()
+    except OSError:
+        return {}
+    in_tbl = False
+    headers = {}
+    for line in lines:
+        s = line.strip()
+        if s.startswith("["):
+            in_tbl = s == "[mcp_servers.blueprintos-tasks.headers]"
+            continue
+        if in_tbl and "=" in s and not s.startswith("#"):
+            k, v = s.split("=", 1)
+            headers[k.strip()] = v.strip()
+    return headers
+
+hdr = bos_headers(default_cfg)
+hdr_block = ""
+if hdr:
+    hdr_block = "\n[mcp_servers.blueprintos-tasks.headers]\n"
+    for k, v in hdr.items():
+        hdr_block += "%s = %s\n" % (k, v)
+
+body = """# Thin Grok session. Written by scripts/grok-thin.sh. Secrets only copied from the default Grok home on this machine.
 
 [plugins]
 enabled = [
@@ -173,7 +220,9 @@ paths = [
     %s
 ]
 %s
-disabled = ["qmd", "typesafe-ai", "whathappened"]
+disabled = [
+    %s
+]
 
 [mcp_servers.playwright]
 command = "npx"
@@ -183,8 +232,10 @@ enabled = true
 [mcp_servers.blueprintos-tasks]
 url = "https://api.styleblueprint.ai/mcp"
 enabled = true
-""" % (path_l, ignore_block)
+%s""" % (path_l, ignore_block, disabled_l, hdr_block)
 open(out, "w").write(body)
+if hdr:
+    print("  grok-thin: copied BlueprintOS tasks MCP headers from default Grok home")
 PY
 
 HOOK_SRC="$KIT_ROOT/scripts/grok-thin-home/hooks"
@@ -193,23 +244,27 @@ cp "$HOOK_SRC/impeccable-ui-edit.sh" "$THIN_HOME/hooks/impeccable-ui-edit.sh"
 cp "$HOOK_SRC/write-catalog.sh" "$THIN_HOME/hooks/write-catalog.sh"
 chmod +x "$THIN_HOME/hooks/"*.sh
 
-# JSON hooks: commands relative to this JSON file (Grok hook-file rule).
-python3 - "$THIN_HOME/hooks/thin-session.json" <<'PY'
-import json, sys
-path = sys.argv[1]
+JEV_KEY="${JEV_API_KEY_FILE:-$HOME/.config/dev-approved-lfg/jev_api_key}"
+python3 - "$THIN_HOME/hooks/thin-session.json" "$JEV_KEY" <<'PY'
+import json, os, sys
+path, key = sys.argv[1], sys.argv[2]
 doc = {
   "hooks": {
     "SessionStart": [{"hooks": [{"type": "command", "command": "./write-catalog.sh", "timeout": 15}]}],
-    "PreToolUse": [{
-      "matcher": "run_terminal_command|search_replace|write|use_tool|spawn_subagent|Bash|Write|Edit|MultiEdit",
-      "hooks": [{"type": "command", "command": "./jev-pretool.sh", "timeout": 8}],
-    }],
     "PostToolUse": [{
       "matcher": "search_replace|write|Write|Edit|MultiEdit",
       "hooks": [{"type": "command", "command": "./impeccable-ui-edit.sh", "timeout": 6}],
     }],
   }
 }
+if os.path.isfile(key) and os.path.getsize(key) > 0:
+    doc["hooks"]["PreToolUse"] = [{
+      "matcher": "run_terminal_command|search_replace|write|use_tool|spawn_subagent|Bash|Write|Edit|MultiEdit",
+      "hooks": [{"type": "command", "command": "./jev-pretool.sh", "timeout": 8}],
+    }]
+    print("  grok-thin: Jev PreToolUse enabled")
+else:
+    print("  grok-thin: Jev hook skipped (no key). Run scripts/pickup-jev-key.sh")
 json.dump(doc, open(path, "w"), indent=2)
 open(path, "a").write("\n")
 PY
