@@ -1,0 +1,68 @@
+name: validate
+
+# This repository's first automated check. It runs on every pull request and on pushes to
+# the default branch. The repository is public and open to outside contributors, so the
+# token is read-only and no step needs a secret.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kit:
+    name: Kit packaging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Offline, unauthenticated, no network. Catches the defects schema validation
+      # cannot see: version drift, sources that do not resolve, an unsupported catalog
+      # key, a declared skills path pointing at nothing, a skill-name collision between
+      # core and overlay, constructs that resolve only on Claude Code, an extension point
+      # with no writer or no reader, and the always-on description budget.
+      - name: Validate kit packaging
+        run: python3 scripts/validate-kit.py
+
+      # Proves the gate still catches what it claims to. Without this, a check that
+      # silently stops working looks identical to a check that passes.
+      - name: Prove the gate catches regressions
+        run: bash scripts/test-validate-kit.sh
+
+  manifests:
+    name: Manifest schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      # Schema-only and unauthenticated. It is deliberately not the whole gate: it once
+      # passed cleanly on a catalog whose Grok half used an invented key and was not
+      # installable at all. The job above is what catches that class.
+      - name: claude plugin validate --strict
+        run: |
+          set -euo pipefail
+          for m in .claude-plugin/marketplace.json \
+                   .claude-plugin/plugin.json \
+                   plugins/blueprint/.claude-plugin/plugin.json; do
+            echo "::group::$m"
+            claude plugin validate --strict "$m"
+            echo "::endgroup::"
+          done
