@@ -51,6 +51,52 @@ printf '{"toolName":"read_file","toolInput":{"target_file":"x"}}\n' \
   | GROK_HOME="$THIN" python3 "$KIT_ROOT/scripts/grok-thin-home/hooks/jev-pretool.sh" \
   | grep -q '"allow"' || fail "read_file should allow"
 
+# Jev request shape. These two bugs shipped together and both fail open, so the
+# gate was dead on every call: the endpoint 404'd and the model field was wrong.
+# A stub server records what the hook actually sends.
+STUB_DIR="$TMP/jev-stub"
+mkdir -p "$STUB_DIR"
+printf 'secret-not-real\n' > "$STUB_DIR/key"
+python3 - "$STUB_DIR" <<'STUB' &
+import http.server, json, sys, pathlib
+out = pathlib.Path(sys.argv[1])
+class H(http.server.BaseHTTPRequestHandler):
+	def do_POST(self):
+		body = self.rfile.read(int(self.headers.get("content-length", 0)))
+		(out / "seen.json").write_text(json.dumps({"path": self.path, "body": json.loads(body or "{}")}))
+		payload = json.dumps({"model": "jev-1.13.0", "answers": {"next": {
+			"type": "choice", "choice": "write", "confidence": 0.95, "probabilities": {"write": 0.95}}}}).encode()
+		self.send_response(200); self.send_header("content-type", "application/json")
+		self.send_header("content-length", str(len(payload))); self.end_headers(); self.wfile.write(payload)
+	def log_message(self, *a): pass
+srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+(out / "port").write_text(str(srv.server_port))
+srv.handle_request()
+STUB
+for _ in $(seq 1 50); do [ -s "$STUB_DIR/port" ] && break; sleep 0.1; done
+[ -s "$STUB_DIR/port" ] || fail "Jev stub server never bound"
+printf '{"toolName":"write","toolInput":{}}\n' \
+  | GROK_HOME="$THIN" JEV_API_KEY_FILE="$STUB_DIR/key" \
+    TYPESAFE_DECISIONS_URL="http://127.0.0.1:$(cat "$STUB_DIR/port")/v1/systemone" \
+    python3 "$KIT_ROOT/scripts/grok-thin-home/hooks/jev-pretool.sh" >/dev/null || true
+wait
+[ -s "$STUB_DIR/seen.json" ] || fail "Jev hook never sent a request"
+python3 - "$STUB_DIR/seen.json" <<'CHECK' || fail "Jev request shape wrong"
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert d["path"].endswith("/v1/systemone"), f"wrong path: {d['path']}"
+assert "model" in d["body"], "request must send `model`, not selectedModels"
+assert "selectedModels" not in d["body"], "selectedModels is not an API field (400)"
+assert d["body"]["model"] == "jev-1.13.0", f"model not pinned: {d['body']['model']}"
+assert d["body"]["questions"]["next"]["type"] == "choice"
+CHECK
+
+# The shipped default must target the real endpoint, not the 404 spelling.
+grep -q 'api.typesafe.ai/v1/systemone' "$KIT_ROOT/scripts/grok-thin-home/hooks/jev-pretool.sh" \
+  || fail "hook default endpoint is not /v1/systemone"
+grep -q 'v1/system-one' "$KIT_ROOT/scripts/grok-thin-home/hooks/jev-pretool.sh" \
+  && fail "hook still references the 404 path /v1/system-one"
+
 # Impeccable skip on PHP
 printf '{"toolName":"search_replace","toolInput":{"target_file":"app/Foo.php"}}\n' \
   | python3 "$KIT_ROOT/scripts/grok-thin-home/hooks/impeccable-ui-edit.sh" \

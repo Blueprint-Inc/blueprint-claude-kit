@@ -67,14 +67,19 @@ except Exception:
 if not key:
     allow()
 
+# /v1/systemone, no hyphen: the hyphenated path 404s, and because every failure
+# here fails open, that 404 silently disabled the gate on every call. Pinned model
+# rather than an alias, matching scripts/jev_spike/client.py in BlueprintOS: the
+# 0.7 floor below is only meaningful against a fixed version.
 endpoint = os.environ.get(
-    "TYPESAFE_DECISIONS_URL", "https://api.typesafe.ai/v1/system-one"
+    "TYPESAFE_DECISIONS_URL", "https://api.typesafe.ai/v1/systemone"
 )
+model = os.environ.get("JEV_MODEL", "jev-1.13.0")
 criteria = {n: n for n in (remaining[:31] + ["none"])}
 body = json.dumps(
     {
         "state": {"tool": tool, "remaining": remaining[:32]},
-        "selectedModels": ["jev-latest"],
+        "model": model,
         "questions": {
             "next": {
                 "type": "choice",
