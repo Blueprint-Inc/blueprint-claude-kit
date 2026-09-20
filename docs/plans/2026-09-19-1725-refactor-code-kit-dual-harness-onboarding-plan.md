@@ -147,11 +147,11 @@ This plan covers the re-founding: rename, packaging, the core/overlay split, dri
   - **When** they start work in a repository whose default branch is not `staging` and which has no cloud-function manifest,
   - **Then** every core workflow behaves correctly, and none references a Blueprint repository, branch rule, or cloud project.
 
-- AE3. Instruction files stay within harness limits
+- AE3. Instruction files stay within a stated budget
   - **Covers R5.**
-  - **Given** the `blueprintos` repository, whose project instruction file is 39,966 characters — four times Grok Build's 10,000-character cap — and ten other repositories already over it,
+  - **Given** the `blueprintos` repository, whose project instruction file is 39,622 characters,
   - **When** the kit contributes its project-instruction content,
-  - **Then** the step measures the file, reports the overage, and does not append, placing any content it must add where the harness will still read it.
+  - **Then** the step reports the resulting size so the cost is visible, and appends — because no harness truncates the file (Assumptions), the size is a context-budget concern rather than a correctness one.
 
 - AE4. Migration leaves nothing dangling and the result is demonstrably working
   - **Covers R23, R24.**
@@ -204,9 +204,9 @@ This plan covers the re-founding: rename, packaging, the core/overlay split, dri
 
 All four items deferred from the brainstorm are now settled and recorded as Key Technical Decisions: the canonical tree is referenced by declared manifest paths rather than links or copies (KTD1); core and overlay are two plugin entries in one marketplace catalog (KTD2); the deploy script is retired and the per-project step moves to `bootstrap-project` (KTD3); and the deep-review skill moves to the overlay, which makes its external-CLI dependency an overlay prerequisite rather than a core gate.
 
-**Resolve before the per-project step ships**
+**Resolve before planning: none.**
 
-- What Grok Build actually does with a project instruction file over its 10,000-character cap — drop it, truncate it, or warn. This is filed as blocking rather than deferred because eleven repositories are already over, the largest at four times the cap: if the answer is "drop," those repositories have no project instructions on that harness today and U5 must not append to them. One measurement settles it, and U7 takes it.
+The cap question that previously blocked the per-project step is **measured and closed**. See Assumptions.
 
 **Deferred to implementation**
 
@@ -348,14 +348,14 @@ The tree is a scope declaration, not a constraint; per-unit `**Files:**` remain 
 - Grok Build resolves skills from a plugin installed through Claude Code's marketplace. Observed on this machine via `grok inspect` (16 plugins discovered from `~/.claude/plugins/`), not verified on a clean machine. U1's verification tests it directly.
 - Grok Build also keeps its own plugin store in parallel, pinned by commit. Both are live at once, so a plugin can be installed twice at different versions — verified: this machine holds three Compound Engineering installs at two versions, two of them created because one install URL carried a `.git` suffix and the other did not.
 - Grok Build folder trust is **not** inherited from a trusted parent, and project instruction files are not loaded at all until the folder is trusted — verified by controlled test.
-- Grok Build's behavior when a project instruction file exceeds the 10,000-character cap — drop, truncate, or warn — is **unobserved**. U7 measures it before the guides state anything about it.
+- Grok Build does **not** truncate a project instruction file at the 10,000-character cap its own README documents. Measured 2026-09-20 with a sentinel probe: a 61,982-character file (~15,495 tokens, larger than the biggest repository on this machine) carried a random marker at byte 61,927, and a headless run reproduced that marker verbatim. A 22,862-character run behaved the same. The README's cap claim is wrong; treat instruction-file size as a context-budget concern, not a correctness one.
 - `claude plugin validate --strict` exists on the installed CLI. The reference implementation runs it in its own release script; the exact flag is confirmed at U10 rather than assumed.
 - macOS bash 3.x is the floor for any shell script, so no associative arrays. This already forced one rewrite of the current deployer.
 - Exact Claude Code version gates for `metadata.pluginRoot` and the combined install form were reported during research but not verified here; U3 confirms them against the installed CLI before relying on them.
 
 ### Sequencing
 
-U1 → U2 → U3 form the packaging spine and must land in order. U4 starts once U3 lands, because the overlay paths it edits only exist afterwards. U5 depends on U3 and on U7's cap measurement. U6 is independent of the spine. U7 is independent of everything. U8 depends on U6 and U7. U9 runs last, after U3, U5, U6, and U8, so the rename sweep follows the documents it rewrites. U10 depends on U3.
+U1 → U2 → U3 form the packaging spine and must land in order. U4 starts once U3 lands, because the overlay paths it edits only exist afterwards. U5 depends on U3; the cap measurement that previously gated it is resolved. U6 is independent of the spine. U7 is independent of everything. U8 depends on U6 and U7. U9 runs last, after U3, U5, U6, and U8, so the rename sweep follows the documents it rewrites. U10 depends on U3.
 
 ### Risks
 
@@ -402,7 +402,7 @@ A flow-and-edge-case pass identified five behaviors the Product Contract's three
 | U2 | Convert commands to skills | `skills/*/SKILL.md` | U1 |
 | U3 | Two-plugin split and per-harness manifests | `.claude-plugin/`, `.grok-plugin/`, `plugins/` | U2 |
 | U4 | Cross-harness portability sweep | `skills/`, `plugins/blueprint/skills/` | U3 |
-| U5 | bootstrap-project absorbs per-project seeding | `skills/bootstrap-project/`, `deploy.sh` | U3, U7 |
+| U5 | bootstrap-project absorbs per-project seeding | `skills/bootstrap-project/`, `deploy.sh` | U3 |
 | U6 | Machine install path reconciled to the baseline | `install.sh`, `setup.sh`, `docs/claude-setup-baseline.md` | — |
 | U7 | GitHub and Google Cloud setup guides | `docs/guides/` | — |
 | U8 | Repository entry point and license | `README.md`, `ONBOARDING.md`, `LICENSE` | U6, U7 |
@@ -492,7 +492,7 @@ A flow-and-edge-case pass identified five behaviors the Product Contract's three
 
 **Goal:** The files that genuinely belong in a consuming repository still get there once no deployer copies them.
 **Requirements:** R4, R5.
-**Dependencies:** U3, U7.
+**Dependencies:** U3.
 **Files:** `skills/bootstrap-project/SKILL.md`, `agent_docs/` (becomes seed templates), `deploy.sh` (removed), `sync-global-commands.sh` (removed), `.gitignore`.
 **Approach:**
 1. Write a disposition for each of the nine kinds of per-project content the deployer creates today — the six `agent_docs/` files, the review-agent config template, the lessons file, the cross-model peer config, the instincts directory, the project instruction workflow block, the gitignore append, the version stamp, and the manifest plus session hook. Each is kept as per-project, moved into the plugin, or retired, and each kept item names its actor.
@@ -500,7 +500,7 @@ A flow-and-edge-case pass identified five behaviors the Product Contract's three
 3. Resolve the relative-path problem: six shipped files reference `agent_docs/...` by a bare relative path that resolved only because a copy landed in the project. As machine-level skills those paths resolve against the user's working directory. Either seeding guarantees them or each reference degrades with a named message.
 4. Extend `bootstrap-project` to seed the kept items, including the cross-model peer config with its never-clobber contract.
 5. Keep seeding idempotent — never overwrite an existing file — since `agent_docs/` is edited per project after seeding.
-6. Measure the project instruction file before appending, and do not append when the result would exceed Grok Build's cap.
+6. Report the project instruction file's size after appending, so its context cost stays visible. Do not refuse to append on size alone: no harness truncates the file, so size is a budget concern the `/context` gate already covers.
 7. Delete the deployer, its manifest and orphan-detection machinery, the version stamp, the session-start hook writer, and the global command sync script. Retire `VERSION` in favor of the manifest's version field.
 8. Remove the self-deploy artifact block from `.gitignore`, which existed only because the deployer could target this repo.
 9. Drop the GitNexus indexing step rather than porting it (R18). Note that GitNexus also survives outside the kit, registered by another tool — out of scope for R18, which covers kit-installed tooling, but worth stating so a reader does not read its presence as a failure.
@@ -508,7 +508,7 @@ A flow-and-edge-case pass identified five behaviors the Product Contract's three
 - Running bootstrap-project in a fresh repository produces every per-project artifact the deployer used to write.
 - Running it a second time changes nothing and overwrites no locally edited file.
 - Running it in a repository whose instruction file already carries a workflow section does not duplicate that section.
-- Covers AE3. In a repository whose instruction file is already four times the cap, the step reports the overage and does not append.
+- Covers AE3. In a repository with a large instruction file, the step appends and reports the resulting size.
 - Every path a kit skill references resolves after seeding, or the referencing skill degrades with a named message rather than a missing-file error.
 - Running bootstrap-project in a repository that was never seeded does not silently no-op at the issue-conventions step.
 - No code path in the repository invokes GitNexus.
@@ -548,7 +548,7 @@ A flow-and-edge-case pass identified five behaviors the Product Contract's three
 3. Use HTTPS git URLs, or derive the protocol from the authenticated CLI. Hardcoding SSH has already broken a clone for a teammate on HTTPS auth.
 4. Fix one canonical repository URL string and use it verbatim everywhere, and state one canonical install route per harness — Claude Code through its marketplace, Grok Build through Grok's own store, never both for the same package. Grok keys its install slug on the URL and also discovers Claude Code's plugin directory, so the same package can install twice: once from a `.git`-suffixed URL variant, and once from each store. Both already happened on this machine, producing three Compound Engineering installs at two versions.
 5. State what each trust grant authorizes, not just that it is required: plugin or source trust lets the installed package's skills and bundled scripts run; folder trust lets the repository's own instruction files and skills load. Say that folder trust belongs only to repositories the reader controls or has reviewed. The audience is people new to the framework, and these prompts are the only control preventing a cloned repository's own instructions from loading into an agent that runs commands.
-6. Measure Grok Build's actual behavior when a project instruction file exceeds the cap — drop, truncate, or warn — before either guide says anything about it. U5 depends on this answer.
+6. State instruction-file size as a context-budget consideration, not a hard limit. Grok Build's README documents a 10,000-character cap that measurement shows it does not enforce (Assumptions); do not repeat the README's claim in a public guide.
 7. Use named placeholders for account, organization, project, and billing identifiers, so running every command first does not publish the account it was run against.
 8. Scope the Google Cloud guide to project creation, billing, CLI authentication, and only the services the workflows actually touch.
 **Execution note:** every command in both guides is run before it is written down, per the standing rule that a handed-over command must work on first paste.
