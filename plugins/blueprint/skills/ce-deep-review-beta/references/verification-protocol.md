@@ -21,7 +21,7 @@ compute a verdict. So provenance (which vendor produced a finding) cannot bias t
 Run via the Bash tool after Pass 2 completes:
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/scripts/verify-findings.py" verify-records "<plan-path>" "${CMRE_OUT_DIR:-/tmp/cmre-panel}/records"
+SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; python3 "$SKILL_DIR/scripts/verify-findings.py" verify-records "<plan-path>" "${CMRE_OUT_DIR:-/tmp/cmre-panel}/records"
 ```
 
 It emits `{"verified": [{model, lens, id, text, verdict, grounding_quote}], "counts": {...}}`. Each

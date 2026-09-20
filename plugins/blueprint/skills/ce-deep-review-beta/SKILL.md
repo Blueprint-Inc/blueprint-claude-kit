@@ -2,7 +2,6 @@
 name: ce-deep-review-beta
 description: "[BETA] Deep cross-model review of a high-stakes plan: runs the Claude ce-doc-review panel, then (with consent) fans the plan across non-Claude reviewer CLIs, verdict-tags their decorrelated findings against the plan with a deterministic quote-grep backstop (CONFIRMED / NOT-FOUND-IN-DOC / NEEDS-HUMAN), and writes a reconciled verified .deep-review.md sidecar."
 disable-model-invocation: true
-argument-hint: "[path/to/plan.md]"
 allowed-tools: Bash(bash *env-detect.sh*), Bash(bash *gitleaks-scan.sh*), Bash(bash *panel-critique.sh*), Bash(python3 *verify-findings.py*), Bash(python3 *reconcile.py*)
 ---
 
@@ -35,15 +34,14 @@ wait for the reply — never skip the gate.
    never prints credential values):
 
    ```bash
-   bash "${CLAUDE_SKILL_DIR}/scripts/env-detect.sh"
+   SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; bash "$SKILL_DIR/scripts/env-detect.sh"
    ```
 
-   `${CLAUDE_SKILL_DIR}` is the runtime path to this skill's directory and resolves on every
-   platform that ships the env var. On a target that does not set it (the path expands to
-   `/scripts/...` and the script does not run), do NOT treat the empty result as "zero arms" and
-   silently fall through to panel-only — that hides an available Codex/agy arm. Surface it instead:
-   report that arm detection could not run because the skill directory did not resolve, and run the
-   script via that platform's skill-relative path before deciding coverage.
+   `$SKILL_DIR` is the absolute path of the directory this SKILL.md was loaded from, which
+   you substitute yourself — set it on the same line, keeping the trailing `;`. Do not use a
+   harness-provided path variable: `CLAUDE_SKILL_DIR` is set only by Claude Code, and where it
+   is unset the path silently expands to `/scripts/...`, the script does not run, and an empty
+   result must NOT be read as "zero arms".
 
    Parse `{"codex":"ok|unauthed|missing","agy":"ok|unauthed|missing|unavailable"}`. An arm is
    **available** only when `ok` (installed + an offline auth signal); `unavailable` means
@@ -81,7 +79,7 @@ copy (do not paraphrase them).
 1. **Content preview.** Run gitleaks via the Bash tool:
 
    ```bash
-   bash "${CLAUDE_SKILL_DIR}/scripts/gitleaks-scan.sh" "<plan-path>"
+   SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; bash "$SKILL_DIR/scripts/gitleaks-scan.sh" "<plan-path>"
    ```
 
    - If it returns hits → render them as `Line N (rule-id): <redacted preview>` in the gate stem.
@@ -124,7 +122,7 @@ filter records post-hoc). Read `references/arm-invocation.md` for record parsing
 progress/timeout streaming format, and `references/ship-state-machine.md` for the run-state model.
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/panel-critique.sh" --models <subset> "<plan-path>"
+SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; bash "$SKILL_DIR/scripts/panel-critique.sh" --models <subset> "<plan-path>"
 ```
 
 - **If the harness blocks this call** (auto-mode egress classifier; note `allowed-tools` is not sufficient
@@ -145,7 +143,7 @@ Ground every raw cross-model finding against the plan before presenting it. Read
 and the brittleness caveats — do not paraphrase them.
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/scripts/verify-findings.py" verify-records "<plan-path>" "${CMRE_OUT_DIR:-/tmp/cmre-panel}/records"
+SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; python3 "$SKILL_DIR/scripts/verify-findings.py" verify-records "<plan-path>" "${CMRE_OUT_DIR:-/tmp/cmre-panel}/records"
 ```
 
 - Parse `{"verified": [{model, lens, id, text, verdict, grounding_quote}], "counts": {...}}`. Each
@@ -167,7 +165,7 @@ the decision-changing union — do not paraphrase them.
 1. **Rotate** any existing verified sidecar out of the way first (data-loss-safe; keeps the 5 newest):
 
    ```bash
-   python3 "${CLAUDE_SKILL_DIR}/scripts/reconcile.py" rotate "<plan-path>.deep-review.md"
+   SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; python3 "$SKILL_DIR/scripts/reconcile.py" rotate "<plan-path>.deep-review.md"
    ```
 
    Leave any existing `<plan-path>.deep-review-draft.md` in place — it is a historical thin-slice
@@ -176,7 +174,7 @@ the decision-changing union — do not paraphrase them.
    CONFIRMED):
 
    ```bash
-   python3 "${CLAUDE_SKILL_DIR}/scripts/reconcile.py" render-cross-model "<verify-records.json>"
+   SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; python3 "$SKILL_DIR/scripts/reconcile.py" render-cross-model "<verify-records.json>"
    ```
 3. **Write** `<plan-path>.deep-review.md` with:
    - Frontmatter: `skill_phase: verified`, `verification: quote-grep-backstop`,

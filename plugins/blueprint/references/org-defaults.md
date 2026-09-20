@@ -29,3 +29,18 @@ Preflight: when `gcloud` is installed, confirm `gcloud auth print-access-token` 
 before creating a worktree. If it fails, stop and ask the user to run `gcloud auth login`
 rather than creating a worktree the task cannot use. When `gcloud` is not installed, skip
 it — not every machine or project needs it.
+
+## Prerequisite: the Compound Engineering plugin
+
+The overlay's deep-review skill invokes Compound Engineering's `ce-doc-review` skill and
+its reviewer agents **by name** at runtime. No plugin manifest on either harness can
+declare a dependency on another plugin, so this cannot be enforced — it has to be stated.
+
+Install the Compound Engineering plugin before the overlay, or the deep-review skill
+fails at the point it tries to resolve a name that is not there. On a machine where that
+name resolves to something else entirely, the invocation is not distinguishable from the
+intended one.
+
+The deep-review skill additionally shells out to external model CLIs (`codex`, `agy`).
+Those are checked at runtime and their absence degrades the skill to a panel-only run
+rather than failing it.
