@@ -174,3 +174,10 @@ counts, and the re-check grep only, never the JSON.
 Run `/context` in a session — if system-prompt overhead is well above ~15k
 tokens in a plain dev project, something has crept back in: check for new
 global skills, duplicate plugins, or a regrown lessons file.
+
+## Grok keep-set (default)
+
+Plain `grok` uses the same two-plugin keep-set (Compound Engineering and
+Impeccable), Claude/Cursor compat off, operator slash commands, and optional
+Jev PreToolUse. `setup.sh` applies it to `$HOME/.grok`. Details:
+`docs/grok-tempo-thin-session.md`. Re-apply: `bash scripts/grok-thin.sh --default --install-only`.

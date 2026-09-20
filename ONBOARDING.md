@@ -40,9 +40,14 @@ claude plugin install code-kit-blueprint@blueprintos-code-kit --scope user
 ```
 
 The script is idempotent and safe to re-run. It also applies the plugin baseline, which
-turns off anything that competed with those two. **Two plugins is the whole set** — see
+turns off anything that competed with those two. **Two plugins is the whole set** - see
 [the baseline](docs/claude-setup-baseline.md) for what was removed and the measurements
 behind each removal.
+
+`setup.sh` also applies the Grok keep-set to `~/.grok` (Compound Engineering + Impeccable,
+operator `/deploy` `/ship` `/start-work`). Start `grok` as usual. Jev is optional:
+`bash scripts/pickup-jev-key.sh` then re-run `bash scripts/grok-thin.sh --default --install-only`.
+See [docs/grok-tempo-thin-session.md](docs/grok-tempo-thin-session.md).
 
 ### Provider accounts
 

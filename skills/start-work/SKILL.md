@@ -71,10 +71,33 @@ If no task is supplied, ask for one — never proceed against an empty task.
    step. Keep all project-specific bootstrap logic inside the script, never here.
 
 8. **Confirm and begin.** Report the worktree path, the branch, and the base it was
-   cut from. Then start the task using the **Compound Engineering (`/ce-*`) skills by
-   default** — for anything non-trivial (3+ steps or an architectural decision),
-   run `/ce-brainstorm` to explore requirements, then `/ce-plan`, then implement
-   (optionally via `/ce-work`), and `/ce-code-review` before `/finish-work`.
+   cut from. Then start the task.
+
+   **Issue-shaped pickup (faster):** If the task names a GitHub issue (`#1234`,
+   "pick up #N"), first run `gh issue view <N> --json title,body,labels,state`.
+   If the number is a pull request, the fetch fails, or you are unsure, use the
+   full CE path below.
+
+   Skip `/ce-brainstorm` and `/ce-plan` only when **all** of these hold:
+   - The issue body has a clear problem statement **and** concrete acceptance
+     criteria (expected vs actual for a bug; concrete UX/API/data behavior for a
+     feature).
+   - Labels do not include `Needs Review`.
+   - Labels include `Ready for Develop` or `Dev Approved`.
+
+   When skipping: implement in this session from the issue title and body, or
+   pass that title and body as a `/ce-work` bare prompt (never a blank
+   `/ce-work`, never `mode:return-to-caller` without a plan). Then
+   `/ce-code-review` before `/finish-work` or `/ship`. Report in one line that
+   you took issue-shaped pickup and which conditions held.
+
+   If the issue is a wish, has no expected behavior, or the work is a new product
+   shape, use the full CE path below.
+
+   **Otherwise** use Compound Engineering (`/ce-*`) by default - for anything
+   non-trivial (3+ steps or an architectural decision), run `/ce-brainstorm` to
+   explore requirements, then `/ce-plan`, then implement (optionally via
+   `/ce-work`), and `/ce-code-review` before `/finish-work` or `/ship`.
    Prefer the `ce` skills over their `superpowers:*` equivalents (e.g.
    `ce-brainstorm` over `superpowers:brainstorming`, `ce-plan` over
    `superpowers:writing-plans`) whenever both could apply.
