@@ -25,6 +25,26 @@ Read `deploy.yaml` at the project root. It contains:
 
 ## Deploy Flow
 
+### Step 0: Verify gcloud is logged in
+
+**Do this before any other deploy work.** Every later step calls `gcloud`.
+
+```bash
+command -v gcloud >/dev/null 2>&1 && gcloud auth print-access-token >/dev/null 2>&1
+```
+
+- **gcloud missing:** STOP. Tell the user to install the Google Cloud SDK (`brew install --cask google-cloud-sdk`), then re-run `/deploy`.
+- **Not logged in / expired token:** STOP. Do not read the manifest, detect CFs, or deploy. Tell the user:
+
+  ```
+  gcloud is not logged in (or credentials expired). Run this in your terminal, then tell me when you're done:
+
+  gcloud auth login
+  ```
+
+  After they confirm, re-run the check. Do not proceed until `gcloud auth print-access-token` succeeds.
+- **Logged in:** Note the active account (`gcloud config get-value account`) and continue.
+
 ### Step 1: Read the manifest
 
 Parse `deploy.yaml`. Validate it has `project`, `region`, `runtime`, `source`, and at least one function defined.
@@ -172,6 +192,7 @@ If any deploy failed, do NOT update the tag. Explain that re-running `/deploy` w
 
 ## Error Handling
 
+- If gcloud is missing or not logged in → stop with the Step 0 prompt; never deploy without a valid token
 - If `deploy.yaml` is missing or unparseable → stop with clear error
 - If a named CF isn't in the manifest → stop with "unknown CF" error listing valid names
 - If a CF deploy fails → report error, continue deploying remaining CFs
@@ -181,6 +202,7 @@ If any deploy failed, do NOT update the tag. Explain that re-running `/deploy` w
 
 ## Safety
 
+- **Requires gcloud login** before any deploy work (Step 0)
 - **Always confirms** before deploying — never auto-deploys
 - **Never includes `--set-env-vars`** — existing env vars always preserved
 - **Preserves IAM bindings** — captures before, verifies after, auto-restores if dropped
