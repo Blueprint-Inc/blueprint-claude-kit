@@ -36,24 +36,71 @@ if [ -d "$DEFAULT_HOME/installed-plugins" ] && [ ! -e "$THIN_HOME/installed-plug
   ok "linked installed-plugins store"
 fi
 
+BOS_ROOT="${GROK_THIN_BOS_ROOT:-$KIT_ROOT/../blueprintos}"
+if [ -d "$BOS_ROOT" ]; then
+  BOS_ROOT="$(cd "$BOS_ROOT" && pwd)"
+else
+  BOS_ROOT=""
+fi
+
 KIT_SKILLS="$KIT_ROOT/skills"
 OVERLAY_SKILLS="$KIT_ROOT/plugins/blueprint/skills"
+GOLDEN_COMMANDS="$KIT_ROOT/golden/.claude/commands"
+BOS_COMMANDS="$BOS_ROOT/.claude/commands"
+BOS_SKILLS="$BOS_ROOT/.claude/skills"
 IMPECCABLE_SKILL=""
-if [ -d "$KIT_ROOT/../blueprintos/.claude/skills/impeccable" ]; then
-  IMPECCABLE_SKILL="$(cd "$KIT_ROOT/../blueprintos/.claude/skills/impeccable" && pwd)"
+if [ -d "$BOS_SKILLS/impeccable" ]; then
+  IMPECCABLE_SKILL="$BOS_SKILLS/impeccable"
 elif [ -d "$HOME/.claude/plugins/cache/impeccable" ]; then
   found=$(find "$HOME/.claude/plugins/cache/impeccable" -type d -name impeccable -path '*/skills/impeccable' 2>/dev/null | head -1 || true)
   IMPECCABLE_SKILL="${found:-}"
 fi
 FIRECRAWL_SKILLS="$HOME/.agents/skills"
 
-python3 - "$THIN_HOME/config.toml" "$KIT_SKILLS" "$OVERLAY_SKILLS" "$IMPECCABLE_SKILL" "$FIRECRAWL_SKILLS" "$THIN_HOME" <<'PY'
+# Slash commands Grok will not see from .claude/commands while Claude-compat is off.
+mkdir -p "$THIN_HOME/commands"
+link_cmd() {
+  src="$1"
+  stem="$2"
+  if [ -f "$src" ]; then
+    ln -sf "$src" "$THIN_HOME/commands/${stem}.md"
+    ok "command /$stem"
+  fi
+}
+# 1: deploy, ship, release  2: start-work, finish-work  3: factory triage
+link_cmd "$BOS_COMMANDS/deploy.md" deploy
+link_cmd "$BOS_COMMANDS/ship.md" ship
+link_cmd "$BOS_COMMANDS/release.md" release
+if [ -f "$BOS_COMMANDS/start-work.md" ]; then
+  link_cmd "$BOS_COMMANDS/start-work.md" start-work
+else
+  link_cmd "$GOLDEN_COMMANDS/start-work.md" start-work
+fi
+if [ -f "$BOS_COMMANDS/finish-work.md" ]; then
+  link_cmd "$BOS_COMMANDS/finish-work.md" finish-work
+else
+  link_cmd "$GOLDEN_COMMANDS/finish-work.md" finish-work
+fi
+link_cmd "$BOS_COMMANDS/sb-factory-triage.md" sb-factory-triage
+
+# 3+4: skill dirs (SKILL.md), not the whole BOS skills tree
+KEEP_SKILL_DIRS=""
+for d in sb-factory-triage daily-prod-errors wp-bos-sync whatshipped open-user-issues; do
+  if [ -f "$BOS_SKILLS/$d/SKILL.md" ]; then
+    KEEP_SKILL_DIRS="$KEEP_SKILL_DIRS $BOS_SKILLS/$d"
+    ok "skill $d"
+  fi
+done
+
+# KEEP_SKILL_DIRS is space-separated; unquoted so each dir is its own argv.
+python3 - "$THIN_HOME/config.toml" "$KIT_SKILLS" "$OVERLAY_SKILLS" "$IMPECCABLE_SKILL" "$FIRECRAWL_SKILLS" $KEEP_SKILL_DIRS <<'PY'
 import os, sys
-out, kit, overlay, impec, fire, thin = sys.argv[1:7]
-paths = [p for p in (kit, overlay, impec) if p]
+out, kit, overlay, impec, fire = sys.argv[1:6]
+extra = [p for p in sys.argv[6:] if p]
+paths = [p for p in [kit, overlay, impec] + extra if p and os.path.isdir(p)]
 path_l = ",\n    ".join('"%s"' % p.replace("\\", "\\\\") for p in paths)
-ignore = fire if fire else ""
-ignore_l = '"%s"' % ignore.replace("\\", "\\\\") if ignore else ""
+ignore_dirs = [p for p in (fire, os.path.expanduser("~/.claude/skills"), os.path.expanduser("~/.cursor/skills")) if p]
+ignore_l = ",\n    ".join('"%s"' % p.replace("\\", "\\\\") for p in ignore_dirs)
 ignore_block = "ignore = [\n    %s\n]" % ignore_l if ignore_l else "ignore = []"
 body = """# Thin Grok session. Written by scripts/grok-thin.sh. No secrets.
 

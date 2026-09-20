@@ -4,6 +4,8 @@ Opt-in thin Grok home for a faster Observe-Orient-Decide-Act loop.
 Default Grok (`$HOME/.grok`) stays until you promote.
 
 Keep-set: Compound Engineering, Impeccable, kit issue-loop skills, BlueprintOS tasks MCP, Playwright MCP.
+Operator slash commands on the thin home: `/deploy`, `/ship`, `/release`, `/start-work`, `/finish-work`, `/sb-factory-triage`.
+Operator skills: `daily-prod-errors`, `wp-bos-sync`, `whatshipped`, `open-user-issues`, `sb-factory-triage`.
 Jev is a PreToolUse hook, not a prompt skill.
 qmd is not loaded.
 

@@ -63,5 +63,18 @@ assert "PreToolUse" in d["hooks"]
 ! grep -E 'bos_pat_|Bearer ey' "$KIT_ROOT/scripts/grok-thin-home/config.toml.tmpl" \
   || fail "secret in template"
 
+# Operator keep-set is linked when BlueprintOS is a sibling of the kit.
+BOS="$KIT_ROOT/../blueprintos/.claude"
+if [ -d "$BOS/commands" ]; then
+  [ -L "$THIN/commands/deploy.md" ] || fail "missing /deploy command link"
+  [ -L "$THIN/commands/ship.md" ] || fail "missing /ship command link"
+  [ -L "$THIN/commands/release.md" ] || fail "missing /release command link"
+  [ -L "$THIN/commands/start-work.md" ] || fail "missing /start-work command link"
+  [ -L "$THIN/commands/finish-work.md" ] || fail "missing /finish-work command link"
+  [ -L "$THIN/commands/sb-factory-triage.md" ] || fail "missing /sb-factory-triage command link"
+  grep -q 'daily-prod-errors' "$THIN/config.toml" || fail "daily-prod-errors not in skills.paths"
+  grep -q 'open-user-issues' "$THIN/config.toml" || fail "open-user-issues not in skills.paths"
+fi
+
 echo "OK grok-thin smoke ($TMP)"
 rm -rf "$TMP"
