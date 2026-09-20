@@ -1,6 +1,6 @@
 ---
 name: start-work
-description: Start an isolated git worktree on a project's base branch for a new task
+description: Start an isolated git worktree on a project's base branch for a new task. Use when beginning a task that will edit code and might run alongside other sessions on the same repo. Prefer over a bare worktree command when the task also needs base-branch resolution and overlap checks.
 ---
 
 # /start-work — Isolated Work Session
@@ -15,12 +15,12 @@ If no task is supplied, ask for one — never proceed against an empty task.
 
 ## Steps
 
-1. **Run any overlay preflight steps.** An installed overlay may declare preflight
-   checks that must pass before a worktree is created — for example, confirming cloud
-   credentials are valid, so the task does not start in a worktree it cannot use. Run
-   the ones the installed overlay declares, and stop if one fails, reporting what the
-   user must do. With no overlay installed there is nothing to run; the core has no
-   opinion about cloud providers. See `docs/extension-points.md`.
+1. **Run the declared preflight checks.** Read `preflight` from `.code-kit/config.json`
+   at the repository root. It is an array of check *names* the core knows how to run —
+   never command strings. Run each recognized name; stop before creating a worktree if one
+   fails and report what the user must do. Report an unrecognized name and skip it. With no
+   `preflight` key, report `Preflight: none declared` and continue. `gcloud-auth` is the one an overlay supplies today: it runs
+   `gcloud auth print-access-token` when `gcloud` is installed.
 
 2. **Identify the target repo.** Run `git rev-parse --show-toplevel`. If the cwd is
    not inside a git repo, stop and ask which repo to work in (or have the user
@@ -33,10 +33,13 @@ If no task is supplied, ask for one — never proceed against an empty task.
      `git symbolic-ref --quiet refs/remotes/origin/HEAD | sed 's#refs/remotes/origin/##'`
      (usually `main`).
    - **Always report which source supplied the value**, e.g.
-     `Base branch: staging (from .code-kit/config.json)` or
+     `Base branch: develop (from .code-kit/config.json)` or
      `Base branch: main (repository default)`. This is how a developer notices that an
      overlay they expected is not installed, before the pull request targets the wrong
-     branch. See `docs/extension-points.md`.
+     branch. A file that does not parse, or a key of the wrong type, counts as absent and
+     is reported as `(config unreadable — using repository default)`. If the default-branch
+     lookup is also empty, run `git remote set-head origin --auto` and retry; if it is still
+     empty, stop and ask which branch to use rather than assuming `main`.
 
 4. **Refresh the base** so the worktree is cut from current code:
    `git checkout <base> && git fetch --prune && git pull --ff-only`.

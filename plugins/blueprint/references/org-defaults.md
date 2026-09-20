@@ -1,7 +1,6 @@
 # Blueprint org defaults
 
-Values the Blueprint overlay supplies through the extension points defined in
-`docs/extension-points.md`. `bootstrap-project` reads this while seeding a repository's
+Values the Blueprint overlay supplies through the core's extension-point contract. `bootstrap-project` reads this while seeding a repository's
 `.code-kit/config.json`; nothing here is read at workflow runtime.
 
 ## Base branch

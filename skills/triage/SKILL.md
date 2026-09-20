@@ -1,6 +1,6 @@
 ---
 name: triage
-description: Analyze the issue backlog — dependency graph, readiness, label validation, and prioritization
+description: Analyze the issue backlog — dependency graph, readiness, label validation, and prioritization. Use when deciding what to work on next, or when the backlog's readiness and dependencies are unclear.
 ---
 
 # /triage — Backlog Analysis

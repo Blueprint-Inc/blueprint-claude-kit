@@ -1,6 +1,6 @@
 ---
 name: create-issues
-description: Create issues from a plan discussed in conversation — with tracking epic, dependencies, and assignee resolution
+description: Create issues from a plan discussed in conversation — with tracking epic, dependencies, and assignee resolution. Use when a plan has been agreed and the work should become tracked issues with dependencies and a tracking epic.
 ---
 
 # /create-issues — Plan-to-Issues Pipeline

@@ -5,8 +5,7 @@
   },
   "metadata": {
     "description": "Compound Engineering development workflows: a generic core plus an optional Blueprint overlay.",
-    "version": "1.0.0",
-    "pluginRoot": "./plugins"
+    "version": "1.0.0"
   },
   "plugins": [
     {
@@ -35,7 +34,7 @@
         "compound-engineering",
         "blueprint"
       ],
-      "source": "blueprint"
+      "source": "./plugins/blueprint"
     }
   ]
 }

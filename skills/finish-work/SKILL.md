@@ -1,6 +1,6 @@
 ---
 name: finish-work
-description: Finish the current worktree branch — commit, push, PR, then clean up
+description: Finish the current worktree branch — commit, push, PR, then clean up. Use when work in a start-work worktree is done and ready to ship. Prefer over a plain commit-and-push when the change should also collect issue references and clean up the worktree.
 ---
 
 # /finish-work — Ship & Clean Up
@@ -20,8 +20,7 @@ skill. Proceeding with none is fine here.
 
 2. **Show what will ship.** Determine the base branch from `base_branch` in
    `.code-kit/config.json` at the repository root, falling back to the repository's
-   default branch when it is absent, and say which source supplied it
-   (`docs/extension-points.md`). Then run `git status` plus
+   default branch when it is absent, and say which source supplied it. Then run `git status` plus
    `git diff --stat <base>...HEAD`. Summarize the change in a sentence or two.
 
 3. **Clobber check against other worktrees** (they share this repo's `.git` but are
@@ -47,7 +46,7 @@ skill. Proceeding with none is fine here.
    - **Fully addressed** — add `Closes #<n>` (or Fixes/Resolves) to the PR body under
      an `## Issues` section. Prefer Closes for completed user-feedback issues.
    - **Partial / soak / monitoring** — use `Refs #<n>` or “Related to #<n>” instead of
-     Closes when acceptance criteria say wait (soak period, `in-staging` monitor).
+     Closes when acceptance criteria say wait (a soak period, or a label the repository uses to mark work still being monitored).
      Default to Refs when unsure — premature Closes is a regression.
 
    **Always put keyword lines in the PR body** — do not rely on title-only `(#N)`.

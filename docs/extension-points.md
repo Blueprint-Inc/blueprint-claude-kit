@@ -30,13 +30,39 @@ Consuming repositories carry `.code-kit/config.json` at the repository root.
   and is commit-pinned on Grok Build, and the one variable that would have made a
   plugin-relative path portable is not available on every harness.
 - **Every key is optional.** A missing file and a missing key behave identically.
+- **A file that does not parse, or a key of the wrong type, is treated as absent** and
+  reported as `(config unreadable — using repository default)`. Never fail closed on a
+  malformed config, and never silently accept it.
+- **A `base_branch` naming a branch that does not exist stops the workflow**, reporting the
+  name. Confirm it with `git rev-parse --verify --quiet` before use; do not fall back
+  silently, because the fallback would be the branch the config exists to override.
+- **When the fallback itself is unavailable** — `origin/HEAD` unset, so the default-branch
+  lookup returns empty — run `git remote set-head origin --auto` and retry. If it is still
+  empty, stop and ask which branch to use. Never assume `main`.
 
 ## Keys
 
 | Key | Type | Core default when absent |
 |---|---|---|
 | `base_branch` | string | The repository's default branch, from `origin/HEAD` |
-| `issue_scopes` | array of strings | No scope list; issue titles carry no scope |
+| `preflight` | array of strings | No preflight checks run |
+
+Issue scopes are deliberately **not** here. `agent_docs/issue-conventions.md` already owns
+them and the issue workflows already read it; a second home would drift.
+
+## Preflight checks
+
+`preflight` is an array of **check names the core already knows how to run** — never
+command strings. A repository-supplied config must not be able to introduce an arbitrary
+command into a workflow that runs before a worktree is created.
+
+| Name | What the core runs | On failure |
+|---|---|---|
+| `gcloud-auth` | `gcloud auth print-access-token`, only when `gcloud` is installed | Stop before creating the worktree and tell the user to run `gcloud auth login` |
+
+An overlay supplies the names through `bootstrap-project`, the same single writer as every
+other key. An unrecognized name is reported and skipped, not guessed at. With no `preflight`
+key the core runs nothing and says `Preflight: none declared`.
 
 ## The core always reports which source it used
 

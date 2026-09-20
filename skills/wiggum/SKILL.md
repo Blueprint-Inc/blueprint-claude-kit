@@ -1,6 +1,6 @@
 ---
 name: wiggum
-description: Automated dev loop — pick the next unblocked issue, implement, test, close, and repeat
+description: Automated dev loop — pick the next unblocked issue, implement, test, close, and repeat. Use when a batch of ready issues should be implemented autonomously end to end, without step-by-step supervision.
 ---
 
 # /wiggum — Automated Development Loop

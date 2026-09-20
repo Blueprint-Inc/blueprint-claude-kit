@@ -1,6 +1,6 @@
 ---
 name: bootstrap-project
-description: Scan the project, detect tech stack, and configure CLAUDE.md with project-specific settings
+description: Scan the project, detect tech stack, and configure CLAUDE.md with project-specific settings. Use once after installing the kit in a project, to detect the stack and write the per-project configuration the workflows read.
 ---
 
 # /bootstrap-project — Project Configuration
@@ -47,7 +47,7 @@ Update `compound-engineering.local.md` with:
   - **Other:** `security-sentinel`, `performance-oracle`
 
 Write `.code-kit/config.json` at the repository root — the declared lookup the core
-workflows read (`docs/extension-points.md`). This skill is its **only** writer, because
+workflows read. This skill is its **only** writer, because
 a machine-level plugin cannot write project files.
 
 - `issue_scopes`: derived from this repository's own directory structure.

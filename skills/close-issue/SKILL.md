@@ -1,6 +1,6 @@
 ---
 name: close-issue
-description: Validate acceptance criteria and close an issue with a structured comment
+description: Validate acceptance criteria and close an issue with a structured comment. Use when an issue's implementation is finished and its acceptance criteria should be validated before closing.
 ---
 
 # /close-issue — Issue Validation & Closure
