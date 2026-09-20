@@ -7,22 +7,40 @@ workflow systems._
 
 ## Canonical plugin set
 
-One workflow system: **Compound Engineering**. Everything that competed with it
-is disabled.
+**Two plugins. Everything else is off.**
 
 | Plugin | State | Why |
 |---|---|---|
-| `compound-engineering@compound-engineering-plugin` | **on** | Our standard workflow (brainstorm/plan/review/debug/worktree) |
-| `frontend-design@claude-plugins-official` | on | Design skill (official copy only) |
-| `playwright@claude-plugins-official` | on | Browser testing |
-| `claude-md-management@claude-plugins-official` | on | CLAUDE.md upkeep |
-| `claude-code-setup@claude-plugins-official` | on | Setup helpers |
-| `superpowers@*` | **off** | Duplicates CE (brainstorming, plans, debugging, TDD, worktrees) and adds a mandatory skill-check gate to every task |
-| `pr-review-toolkit@*` (both marketplaces) | **off** | Third/fourth code-review system; ~33KB of agent definitions per copy |
-| `code-review@claude-plugins-official` | **off** | Redundant with `ce-code-review` and the built-in `/code-review` |
-| `ralph-loop@*` / `ralph-wiggum@*` | **off** | Same plugin under two names; never used, generated Stop-hook errors |
-| `frontend-design@claude-code-plugins` | **off** | Duplicate of the official copy |
-| `github@claude-plugins-official` | off | Was already disabled; `gh` CLI covers it |
+| `compound-engineering@compound-engineering-plugin` | **on** | The workflow system: brainstorm, plan, work, review, debug, worktrees |
+| `impeccable@impeccable` | **on** | Design fluency for frontend work — one skill, 23 commands, curated anti-patterns |
+| everything else | **off** | See below |
+
+Installed from exactly one source each:
+
+```bash
+claude plugin marketplace add EveryInc/compound-engineering-plugin
+claude plugin install compound-engineering@compound-engineering-plugin --scope user
+claude plugin marketplace add pbakaus/impeccable
+claude plugin install impeccable@impeccable --scope user
+```
+
+### What was removed, and why
+
+The 2026-07-08 audit cut the plugin set from ten to five on measured usage. This round
+cuts it to two, on the same principle: a plugin earns its place by being reached for, and
+every one below was either duplicating Compound Engineering or going unused.
+
+| Removed | Reason |
+|---|---|
+| `superpowers@*` | Duplicates CE across brainstorming, plans, debugging, TDD and worktrees, and adds a mandatory skill-check gate to every task |
+| `pr-review-toolkit@*` (both marketplaces) | A third and fourth code-review system; ~33KB of agent definitions per copy |
+| `code-review@claude-plugins-official` | Redundant with `ce-code-review` and the built-in `/code-review` |
+| `ralph-loop@*` / `ralph-wiggum@*` | One plugin under two names; never used, generated Stop-hook errors |
+| `frontend-design@*` (both copies) | Superseded by Impeccable, which is the deeper tool for the same job |
+| `playwright@claude-plugins-official` | CE's own browser skill instructs against a standalone browser stack: "Never install or substitute standalone Playwright". The host-native browser is the sanctioned path |
+| `claude-md-management@claude-plugins-official` | Unused; CLAUDE.md upkeep happens during ordinary work |
+| `claude-code-setup@claude-plugins-official` | Unused; it was listed as on in the previous baseline but nothing ever installed it |
+| `github@claude-plugins-official` | The `gh` CLI covers it |
 
 Apply on a dev machine: `./scripts/apply-baseline-plugins.sh` (merges into
 `~/.claude/settings.json`, backs up first). Takes effect on next session start.

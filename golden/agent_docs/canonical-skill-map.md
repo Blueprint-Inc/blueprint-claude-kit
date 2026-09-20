@@ -1,65 +1,73 @@
 # Canonical Skill Map
 
-When multiple plugins provide overlapping skills, use the canonical skill listed here. This prevents confusion and ensures consistent workflows across projects.
+Three sources of skills, with no overlap between them. This document used to arbitrate
+between competing plugins; that problem is gone, because everything that competed with
+Compound Engineering was removed. What remains is a map of who owns what.
 
-## Primary Framework: compound-engineering
+## Who owns what
 
-| Workflow Step | Use This | Not This |
+| Source | Owns | Reach for it when |
 |---|---|---|
-| Ideation | `/ce-ideate` | — |
-| Brainstorming | `/ce-brainstorm` | `superpowers:brainstorming` |
-| Planning | `/ce-plan` | `superpowers:writing-plans` |
-| Deepening plans | `/ce-plan` | — |
-| Document review | `/ce-doc-review` | — |
-| Executing work | `/ce-work` | `superpowers:executing-plans`, `superpowers:subagent-driven-development` |
-| Code review (giving) | `/ce-code-review` | `superpowers:requesting-code-review` |
-| Git worktrees | `/ce-worktree` | `superpowers:using-git-worktrees` |
-| Writing skills | `/ce-create-agent-skills` | `superpowers:writing-skills` |
-| Frontend UI | `/ce-frontend-design` | `frontend-design:frontend-design` (standalone — uninstall) |
-| Compounding knowledge | `/ce-compound` | — |
-| Todo resolution | `/ce-resolve-todo-parallel` | — |
+| **Compound Engineering** | The development workflow | Thinking, planning, building, reviewing, debugging, shipping |
+| **Impeccable** | Frontend design fluency | Any interface work — design, critique, polish, audit, accessibility |
+| **This kit** | The issue-driven loop around git | Worktrees, issues, backlog, autonomous implementation, post-mortems |
 
-## Superpowers-Only Skills (No CE Equivalent)
+## Compound Engineering — the workflow
 
-These skills are unique to superpowers and should be used as-is:
+| Step | Skill |
+|---|---|
+| Discover ideas | `/ce-ideate` |
+| Scope what to build | `/ce-brainstorm` |
+| Plan how to build it | `/ce-plan` |
+| Review a plan or spec | `/ce-doc-review` |
+| Build it | `/ce-work` |
+| Simplify settled code | `/ce-simplify-code` |
+| Review code | `/ce-code-review` |
+| Debug failing behavior | `/ce-debug` |
+| Judge an adoption decision | `/ce-pov` |
+| Capture a durable learning | `/ce-compound` |
+| Ship end to end, hands-off | `/lfg` |
+
+Use CE's own `/ce-worktree` and `/ce-commit-push-pr` for generic git work. Prefer this
+kit's `/start-work` and `/finish-work` when the work should also resolve a base branch
+from project config, check for sibling-session overlap, and collect issue references.
+
+## Impeccable — design
+
+One skill, `/impeccable`, with 23 commands (`polish`, `audit`, `critique`, and others).
+Reach for it for any interface work: visual design, layout, typography, interaction
+states, accessibility, and anti-pattern detection. It replaces the `frontend-design`
+plugin, which is no longer installed.
+
+## This kit — the issue loop
 
 | Skill | Purpose |
 |---|---|
-| `using-superpowers` | Session bootstrap — skill discovery and routing |
-| `test-driven-development` | TDD workflow enforcement |
-| `verification-before-completion` | Verify work before claiming done |
-| `receiving-code-review` | Handle incoming review feedback with rigor |
-| `dispatching-parallel-agents` | Parallel subagent orchestration patterns |
-| `finishing-a-development-branch` | Branch completion, merge, and PR guidance |
+| `/bootstrap-project` | Once per project: detect the stack, write `.code-kit/config.json`, seed `agent_docs/` |
+| `/start-work` | Isolated worktree cut from the resolved base branch |
+| `/finish-work` | Commit, collect issue references, open the PR, clean up |
+| `/create-issues` | Turn a plan into tracked issues with a tracking epic and dependencies |
+| `/triage` | Backlog dependency graph, readiness, and impact scoring |
+| `/close-issue` | Validate acceptance criteria before closing |
+| `/wiggum` | Autonomous loop: pick an issue, implement, test, PR, close, repeat |
+| `/pomo` | Capture a post-mortem lesson after a surprising fix |
 
-## Code Review Stack
+The Blueprint overlay adds `/deploy-cloud-function` and `/ce-deep-review-beta`.
 
-- **Primary review:** `/ce-code-review` — dispatches 15 specialized agents (security, performance, architecture, language-specific reviewers, data integrity, schema drift, deployment verification)
-- **Supplemental review:** `pr-review-toolkit` — 4 unique agents not covered by ce-review:
-  - `silent-failure-hunter` — error handling auditing
-  - `pr-test-analyzer` — test coverage quality
-  - `comment-analyzer` — comment accuracy and rot detection
-  - `type-design-analyzer` — type invariants and encapsulation
+## Browser work
 
-## Plugins to Uninstall
+Use the host-native browser. Compound Engineering's `ce-test-browser` is explicit that a
+standalone browser stack must not be introduced alongside it, which is why the
+`playwright` plugin is not installed.
 
-These plugins are fully replaced by compound-engineering equivalents:
+## The installed plugin set
 
-```bash
-# Run these once to clean up duplicate plugins
-claude plugins uninstall code-review@claude-plugins-official
-claude plugins uninstall frontend-design@claude-plugins-official
-```
+Exactly two: `compound-engineering@compound-engineering-plugin` and
+`impeccable@impeccable`. Everything else is off by design — see
+`docs/claude-setup-baseline.md` in the kit for what was removed and the evidence behind
+each removal. Adding a third plugin is a decision with a context cost, not a default.
 
-## Development Lifecycle
+## When to read this
 
-```
-/ce-brainstorm → /ce-plan → /create-issues → /wiggum → /ce-code-review → /close-issue → /pomo
-```
-
-## When to Read This Doc
-
-Read this when:
-- You're unsure which skill to use for a workflow step
-- A new plugin is installed and may overlap with existing skills
-- Onboarding a new developer to the shared Claude Code environment
+- You are unsure which source owns a workflow step.
+- Someone proposes installing another plugin, and you want the standard it has to clear.

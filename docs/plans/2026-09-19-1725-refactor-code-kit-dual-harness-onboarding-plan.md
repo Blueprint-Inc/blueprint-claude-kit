@@ -220,7 +220,7 @@ Findings below were verified against the filesystem on 2026-09-19.
 | Finding | Evidence |
 |---|---|
 | Installer contradicts the documented baseline | `setup.sh` installs `superpowers`, `pr-review-toolkit`, `ralph-wiggum`, GitNexus, and registers a qmd MCP server; `docs/claude-setup-baseline.md` records all five as off or removed as of 2026-07-08 |
-| Three positions on one plugin | `setup.sh` uninstalls `frontend-design@claude-plugins-official`; `docs/claude-setup-baseline.md` lists it as on; `golden/agent_docs/canonical-skill-map.md` says to uninstall it |
+| Three positions on one plugin (resolved 2026-09-20) | `setup.sh` uninstalled `frontend-design@claude-plugins-official`; `docs/claude-setup-baseline.md` listed it as on; the skill map said to uninstall it. All three now agree on a two-plugin set that excludes it |
 | GitNexus still runs on deploy | `deploy.sh:593` |
 | Skill map routes to disabled plugins | `golden/agent_docs/canonical-skill-map.md` lists six superpowers-only skills as live and `pr-review-toolkit` as supplemental |
 | Adoption | Exactly one repository carries a kit version stamp, at `2026.05.29`; `VERSION` is `2026.08.23` |
@@ -246,6 +246,7 @@ Findings below were verified against the filesystem on 2026-09-19.
 - KTD5. **The root `plugin.json` stays schema-less.** Adding `$schema` makes Codex treat the package as an Agent Plugin and truncate each `SKILL.md` at 8,000 bytes, and routes omp to a strict provider that rejects skills carrying frontmatter outside the closed Agent Skills field set.
 - KTD6. **The rename is executed as a config migration, not a git operation.** The repo URL is baked into any published marketplace catalog, and live references exist outside this repo. Governs R22, R23, R24, R25.
 - KTD7. **`claude plugin validate --strict` plus a per-skill token-cost check become the repository's first CI gate.** The repo has no tests, CI, or linting today; the plugin layout supplies a validator for free, and `claude plugin details` reports projected token cost, which is the only mechanical guard against re-inflating the context budget the 2026-07-08 audit reduced.
+- KTD12. **The endorsed plugin set is two: Compound Engineering and Impeccable.** *(session-settled: user-directed — chosen over the previous five-plugin baseline: everything else either duplicated Compound Engineering or measured as unused.)* Dropping `playwright` also aligns with Compound Engineering's own browser skill, which instructs against introducing a standalone browser stack. Governs R16, R17, R19.
 - KTD8. **Baseline reconciliation covers both harnesses.** The measured baseline is Claude-Code-only: `~/.claude/settings.json` disables six plugins that `grok inspect` still discovers, and Grok's own disable list names none of them. A single-harness reconciliation would leave the context win unrealized on half the environment. Governs R16, R17, R18, R19.
 
 - KTD9. **The overlay changes core behavior through a generic extension point the core reads, never by shipping a skill of the same name.** Plugin skills collide rather than compose — Grok renames the loser and Claude Code's resolution between a user command and a same-named plugin skill is unobserved — so an overlay `start-work` would give a Blueprint developer two entries and no way to know which ran. The core therefore reads a declared base-branch lookup and the overlay supplies its data. The seam is generic, which is what keeps R7 intact: a mechanism any adopter can use is not a Blueprint assumption. Governs R7, R8, R9.
@@ -521,7 +522,7 @@ A flow-and-edge-case pass identified five behaviors the Product Contract's three
 **Dependencies:** none.
 **Files:** `install.sh` (new, replacing `setup.sh`), `setup.sh` (removed), `docs/claude-setup-baseline.md`, `golden/agent_docs/canonical-skill-map.md` (moved and rewritten), `scripts/apply-baseline-plugins.sh`.
 **Approach:**
-1. Rewrite the prerequisites installer so its plugin set is the baseline's, resolving all six contradictions: the `superpowers`, `pr-review-toolkit`, and `ralph-wiggum` installs; the wrong `frontend-design` copy being uninstalled; the GitNexus install; the qmd MCP server registration; the missing `claude-code-setup`; and the `every-marketplace` source, which conflicts with the baseline's one-marketplace-source-per-plugin rule.
+1. **Done ahead of this unit (2026-09-20).** The user reduced the endorsed plugin set to two — Compound Engineering and Impeccable — and the installer, the baseline document, and the apply script were rewritten together to say so. All three now agree, which they never did before. What remains for this unit is the surrounding installer work, not the plugin set.
 2. Extend the baseline document with a Grok Build section (KTD8), since disabling a plugin in Claude Code's settings does not disable it for Grok, which discovers the same plugins.
 3. Rewrite the canonical skill map to list only what the baseline leaves enabled, and remove its stale superpowers and supplemental-review tables.
 4. Keep `claude plugins` plural usage — both forms are valid CLI.
