@@ -6,7 +6,7 @@ A step-by-step guide to set up the shared Claude Code environment used by this p
 
 ## Step 1: Set Up Your `~/Projects` Directory
 
-All repos live under a single `~/Projects` directory. The tooling assumes this layout — the deploy script, the `/deploy-blueprint-claude` command, and the workspace-level `CLAUDE.md` all reference this path.
+All repos live under a single `~/Projects` directory. The workspace-level `CLAUDE.md` and the maintenance scripts assume this layout.
 
 ```bash
 mkdir -p ~/Projects
@@ -32,7 +32,6 @@ Then clone whichever project repos you'll be working in alongside them.
 
 ### Why `~/Projects`?
 
-- The deploy script at `~/Projects/blueprint-claude-kit/deploy.sh` is referenced by the `/deploy-blueprint-claude` command across all projects
 - The workspace-level `CLAUDE.md` at `~/Projects/CLAUDE.md` provides cross-project context when you open Claude Code from `~/Projects`
 - Consistent paths mean team members can share instructions without path translation
 
@@ -40,7 +39,7 @@ Then clone whichever project repos you'll be working in alongside them.
 
 ## Step 2: Run the Setup Script
 
-The setup script installs all prerequisites automatically — Homebrew, Node.js, Bun, GitHub CLI, Claude Code CLI, plugins, Playwright browsers, GitNexus, and qmd.
+The setup script installs all prerequisites automatically — Homebrew, Node.js, Bun, GitHub CLI, Claude Code CLI, qmd, and exactly two Claude Code plugins: Compound Engineering and Impeccable. It also applies the plugin baseline, turning off anything that competed with them.
 
 ```bash
 ~/Projects/blueprint-claude-kit/setup.sh
@@ -66,7 +65,7 @@ Run `claude` and check that the plugins load. You should see skills like `/ce-br
 
 ## Step 3: Configure MCP Servers
 
-MCP servers give Claude access to external tools and data sources. `setup.sh` already installed qmd and registered it as an MCP server — you just need to index your projects.
+The kit registers no MCP servers. `setup.sh` installs the qmd **CLI** — the qmd MCP server was removed on measured evidence (7 calls against the CLI's ~50). You just need to index your projects.
 
 ### qmd — Index Your Projects
 
@@ -78,16 +77,6 @@ Index each project you work on:
 cd ~/Projects/your-project
 qmd collection add . --name your-project --mask "**/*.py"  # adjust mask for your file types
 qmd embed  # creates vector embeddings for semantic search
-```
-
-### Google Dev Knowledge (optional)
-
-Gives Claude access to Google's developer documentation:
-
-```bash
-claude mcp add --scope user --transport http google-dev-knowledge \
-  --url "https://developerknowledge.googleapis.com/mcp" \
-  --header "X-Goog-Api-Key: <your-api-key>"
 ```
 
 ---
@@ -141,24 +130,28 @@ If a workspace `CLAUDE.md` already exists, read it and make sure your projects a
 
 ---
 
-## Step 6: Deploy the Kit to Your Projects
+## Step 6: Install the Kit
 
-Run the deploy script to install commands, skills, and agent_docs into each project you work on:
+Install once per machine. Nothing is copied into your repositories:
 
 ```bash
-~/Projects/blueprint-claude-kit/deploy.sh ~/Projects/your-project
+claude plugin marketplace add Blueprint-Inc/blueprintos-code-kit
+claude plugin install code-kit@blueprintos-code-kit --scope user
 ```
 
-The script:
-- Copies commands (`/wiggum`, `/create-issues`, `/close-issue`, `/triage`, `/bootstrap-project`, `/deploy-blueprint-claude`)
-- Copies skills (`/pomo`, `/deploy`, `/ce-deep-review-beta`)
-- Copies reference docs to `agent_docs/`
-- Creates `compound-engineering.local.md` template
-- Creates `.claude/lessons.md`
-- Appends a Workflow section to existing `CLAUDE.md` (non-destructive)
-- Prompts before overwriting anything
+That installs the core workflow skills: `/start-work`, `/finish-work`, `/create-issues`,
+`/triage`, `/close-issue`, `/wiggum`, `/pomo`, and `/bootstrap-project`.
 
-After deploying, bootstrap the project:
+Blueprint developers also install the overlay, which adds the Cloud Functions deploy
+skill and cross-model deep review:
+
+```bash
+claude plugin install code-kit-blueprint@blueprintos-code-kit --scope user
+```
+
+Then bootstrap each project you work in. This is the step that seeds the files which
+genuinely belong in a repository — `agent_docs/`, the review-agent config, the lessons
+file, and `.code-kit/config.json`:
 
 ```bash
 cd ~/Projects/your-project
@@ -168,7 +161,7 @@ claude
 
 This scans the project, detects the tech stack, and configures `CLAUDE.md` with project-specific settings and the right review agents.
 
-Repeat for each project you work on.
+Repeat the bootstrap step for each project you work on. The install itself is once per machine.
 
 ---
 
@@ -211,7 +204,7 @@ Add project-specific permissions in each repo. This file is gitignored — it wo
 }
 ```
 
-The deploy script will remind you about gh permissions if they're missing.
+
 
 ---
 

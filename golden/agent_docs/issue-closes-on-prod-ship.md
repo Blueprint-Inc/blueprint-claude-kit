@@ -13,7 +13,7 @@ Title-only `(#N)` is not enough for auto-close or thank-you attribution.
 | Concern | Owner |
 |---------|--------|
 | Portable worktree ship (`/finish-work`) | **kit golden** |
-| BOS `/ship` (feature → staging), `/release` (Travis prod gate) | **BlueprintOS only** — not installed by `deploy.sh` |
+| BOS `/ship` (feature → staging), `/release` (Travis prod gate) | **BlueprintOS only** — not shipped by this kit |
 | Staging→prod release PR body composition | **BlueprintOS** GHA (`deploy-app.yml` / `deploy-web.yml`) + `scripts/collect-release-issues.sh` |
 | Shared algorithm + “why” for agents | **This kit doc** (also mirrored in BOS `docs/ops/release-pr-issue-closes.md`) |
 

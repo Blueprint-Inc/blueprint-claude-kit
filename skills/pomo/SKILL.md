@@ -61,3 +61,5 @@ High-confidence, broadly applicable → propose adding to CLAUDE.md. Ask first.
 ### Step 6: Summarize
 
 Report: lesson captured (or why skipped), files updated, CLAUDE.md modified.
+
+> If a referenced `agent_docs/` file is missing, this project was never bootstrapped. Say so and continue with sensible defaults — do not fail with a missing-file error.

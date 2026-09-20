@@ -71,3 +71,5 @@ Rebuild graph, confirm no orphaned references.
 - ALWAYS include test-passing criterion in acceptance criteria
 - ALWAYS create tracking epic for 2+ related issues
 - Dependencies use: `- Blocked by: #NN — reason`
+
+> If a referenced `agent_docs/` file is missing, this project was never bootstrapped. Say so and continue with sensible defaults — do not fail with a missing-file error.

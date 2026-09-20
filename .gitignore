@@ -1,17 +1,15 @@
-# Self-deploy artifacts — running `deploy.sh .` (or deploying into the kit root)
-# writes the kit's output into this repo. The canonical SOURCE lives under golden/;
-# these root copies are deploy output, not source, and must not be committed.
+# Stale self-deploy output. The old deploy.sh could target this repo itself,
+# leaving copies of the kit at the root. Those copies SHADOW the plugin's own
+# skills when this repo is opened in a harness, so they must never be committed.
+# deploy.sh is gone, so nothing regenerates these — delete any you still have.
 /.claude/
 /agent_docs/
-/compound-engineering.local.md
 /tasks/
 /CLAUDE.md
 /AGENTS.md
 
-# Per-deploy state + tooling output
-.blueprint-kit-version
-blueprint-kit-manifest.json
-.gitnexus/
+# Machine-local Compound Engineering config
+/compound-engineering.local.md
 
 # OS / editor noise
 .DS_Store

@@ -11,19 +11,17 @@ A portable Claude Code configuration kit that combines [compound-engineering](ht
 ## Quick Start
 
 ```bash
-# 1. Clone this kit
-git clone git@github.com:Blueprint-Inc/blueprint-claude-kit.git ~/Projects/blueprint-claude-kit
+# 1. Install the kit (once per machine)
+claude plugin marketplace add Blueprint-Inc/blueprintos-code-kit
+claude plugin install code-kit@blueprintos-code-kit --scope user
 
-# 2. Deploy to your project
-~/Projects/blueprint-claude-kit/deploy.sh /path/to/your/project
-
-# 3. Open in Claude Code and bootstrap
+# 2. Open your project and bootstrap it (once per project)
 cd /path/to/your/project
 claude
 > /bootstrap-project
 ```
 
-The deploy script copies commands, skills, and reference docs into your project. It prompts before overwriting anything. Then `/bootstrap-project` auto-detects your tech stack and configures CLAUDE.md.
+The kit installs once per machine as a plugin; nothing is copied into your repositories. `/bootstrap-project` then seeds the handful of files that genuinely belong in a project and configures CLAUDE.md for its stack.
 
 ---
 
@@ -369,7 +367,7 @@ Total open: 12 | Ready: 7 | Blocked: 5
 1. Identifies the repo and its base branch (`staging` for blueprintos, the default branch otherwise)
 2. Refreshes the base (`checkout` → `fetch --prune` → `pull --ff-only`); stops if the tree is dirty rather than discarding anything
 3. Scans other active worktrees for overlap (warns if one is editing files this task will touch), then creates an isolated worktree with a `feat/`/`fix/`/`chore/` branch whose name matches the directory
-4. Confirms path/branch/base, then begins the work using the **Compound Engineering (`/ce-*`) skills by default** for non-trivial tasks (`/ce-brainstorm` → `/ce-plan` → implement → `/ce-code-review`), preferred over their `superpowers:*` equivalents
+4. Confirms path/branch/base, then begins the work using the **Compound Engineering (`/ce-*`) skills by default** for non-trivial tasks (`/ce-brainstorm` → `/ce-plan` → implement → `/ce-code-review`)
 
 > /start-work fix the commission rounding bug on the salesperson view
 
@@ -432,7 +430,6 @@ Total open: 12 | Ready: 7 | Blocked: 5
 ### "I want to add this kit to a new project"
 
 ```bash
-~/Projects/blueprint-claude-kit/deploy.sh /path/to/new/project
 cd /path/to/new/project
 claude
 > /bootstrap-project
@@ -486,7 +483,6 @@ your-project/
 │   │   ├── close-issue.md
 │   │   ├── triage.md
 │   │   ├── bootstrap-project.md
-│   │   └── deploy-blueprint-claude.md
 │   └── skills/
 │       ├── pomo/SKILL.md
 │       ├── deploy/SKILL.md

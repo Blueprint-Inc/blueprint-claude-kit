@@ -29,7 +29,33 @@ Present findings and ask:
 - Any project-specific scopes for issue titles?
 - Are there any architectural rules to enforce?
 
-### 3. Configure
+### 3. Seed the per-project files
+
+This skill is the **only** writer of project files — a machine-level plugin cannot write
+into a repository. Seeding is **idempotent**: never overwrite a file that already exists,
+because `agent_docs/` in particular is seeded once and then edited per project. Re-running
+must leave those edits intact.
+
+Create each of these when absent, and leave it alone when present:
+
+| Path | Contents |
+|---|---|
+| `agent_docs/` | The six reference files bundled with the plugin |
+| `agent_docs/postmortems/` | Directory plus its README |
+| `compound-engineering.local.md` | Stack and review agents (filled in below) |
+| `.claude/lessons.md` | Empty lesson file with its header |
+| `.compound-engineering/config.local.yaml` | Machine-local CE config — **never replace an existing `cross_model_peer` value** |
+| `tasks/instincts/` | Directory only |
+| `.code-kit/config.json` | The extension-point lookup (below) |
+
+Append once, only when absent: the `## Workflow` section in the project instruction file,
+and a `.compound-engineering/*.local.yaml` line in the project `.gitignore`.
+
+The full disposition, including what the retired deployer used to create and why the
+version stamp, manifest, and session hook are gone, is in the kit's per-project files
+reference.
+
+### 4. Configure
 
 Update or create CLAUDE.md with:
 - Project overview (language, framework, cloud)
@@ -37,6 +63,10 @@ Update or create CLAUDE.md with:
 - Project structure overview
 - Workflow section (commands table, development workflow)
 - Reference docs table (pointing to agent_docs/)
+
+After appending, report the project instruction file's resulting character count so its
+context cost is visible. Do not refuse to append on size alone: no harness truncates the
+file, so this is a budget concern, not a correctness one.
 
 Update `compound-engineering.local.md` with:
 - Detected stack
@@ -61,7 +91,7 @@ Create or update `agent_docs/issue-conventions.md` with the issue scopes, derive
 this repository's own directory structure. That file is the single home for scopes. Create it when it
 is absent — do not assume an earlier step seeded it.
 
-### 4. Summary
+### 5. Summary
 
 Report what was configured and suggest next steps:
 - Create initial issues with `/create-issues`
