@@ -1,0 +1,39 @@
+{
+  "name": "blueprintos-code-kit",
+  "description": "Compound Engineering development workflows: a generic core plus an optional Blueprint overlay.",
+  "owner": {
+    "name": "Blueprint"
+  },
+  "plugins": [
+    {
+      "name": "code-kit",
+      "description": "Issue-driven development workflows for Compound Engineering.",
+      "category": "development",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/Blueprint-Inc/blueprintos-code-kit.git"
+      },
+      "homepage": "https://github.com/Blueprint-Inc/blueprintos-code-kit",
+      "keywords": [
+        "compound-engineering",
+        "worktrees",
+        "issues"
+      ]
+    },
+    {
+      "name": "code-kit-blueprint",
+      "description": "Blueprint overlay for code-kit. Requires code-kit.",
+      "category": "development",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/Blueprint-Inc/blueprintos-code-kit.git",
+        "subdir": "plugins/blueprint"
+      },
+      "homepage": "https://github.com/Blueprint-Inc/blueprintos-code-kit",
+      "keywords": [
+        "compound-engineering",
+        "blueprint"
+      ]
+    }
+  ]
+}

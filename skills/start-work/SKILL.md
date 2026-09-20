@@ -15,34 +15,28 @@ If no task is supplied, ask for one — never proceed against an empty task.
 
 ## Steps
 
-1. **Verify gcloud is logged in** (when gcloud is installed). Many Blueprint
-   projects need GCP credentials for deploys, BigQuery, or Cloud Functions.
-   If `command -v gcloud` succeeds, run:
-   `gcloud auth print-access-token >/dev/null 2>&1`
-   - **Success:** note the active account (`gcloud config get-value account`) and continue.
-   - **Failure (not logged in / expired):** **STOP.** Do not create a worktree yet.
-     Tell the user:
-
-     ```
-     gcloud is not logged in (or credentials expired). Run this in your terminal, then tell me when you're done:
-
-     gcloud auth login
-     ```
-
-     After they confirm, re-run the check. Do not proceed until it succeeds.
-   - **gcloud not installed:** skip this check (not every machine/project needs it).
+1. **Run any overlay preflight steps.** An installed overlay may declare preflight
+   checks that must pass before a worktree is created — for example, confirming cloud
+   credentials are valid, so the task does not start in a worktree it cannot use. Run
+   the ones the installed overlay declares, and stop if one fails, reporting what the
+   user must do. With no overlay installed there is nothing to run; the core has no
+   opinion about cloud providers. See `docs/extension-points.md`.
 
 2. **Identify the target repo.** Run `git rev-parse --show-toplevel`. If the cwd is
    not inside a git repo, stop and ask which repo to work in (or have the user
    `cd` into it). Everything below runs against that repo.
 
-3. **Determine the BASE branch** (what new work branches from):
-   - If the repo directory is named `blueprintos`, the base is **`staging`** — it
-     integrates on staging, not prod, so branching from prod starts you behind
-     everything mid-deploy.
-   - Otherwise the base is the repo's default branch:
+3. **Determine the BASE branch** (what new work branches from) from the declared
+   lookup, never from a hardcoded repository name:
+   - Read `base_branch` from `.code-kit/config.json` at the repository root.
+   - If it is absent, or the file does not exist, use the repo's default branch:
      `git symbolic-ref --quiet refs/remotes/origin/HEAD | sed 's#refs/remotes/origin/##'`
      (usually `main`).
+   - **Always report which source supplied the value**, e.g.
+     `Base branch: staging (from .code-kit/config.json)` or
+     `Base branch: main (repository default)`. This is how a developer notices that an
+     overlay they expected is not installed, before the pull request targets the wrong
+     branch. See `docs/extension-points.md`.
 
 4. **Refresh the base** so the worktree is cut from current code:
    `git checkout <base> && git fetch --prune && git pull --ff-only`.

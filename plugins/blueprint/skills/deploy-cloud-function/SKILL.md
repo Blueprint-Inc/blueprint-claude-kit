@@ -1,18 +1,18 @@
 ---
-name: deploy
+name: deploy-cloud-function
 description: Smart Cloud Function deployment — detects which CFs are affected by code changes, confirms with user, deploys with env-var and IAM preservation, and tags the deploy point.
 ---
 
-# /deploy — Smart Cloud Function Deployment
+# /deploy-cloud-function — Smart Cloud Function Deployment
 
 Deploy Cloud Functions affected by code changes since the last deployment.
 
 ## Invocation
 
 ```
-/deploy                                    # Auto-detect affected CFs from git diff
-/deploy sync-optout-scores-to-ac           # Deploy specific CF(s), skip change detection
-/deploy score-engagement saw-morning-report # Deploy multiple specific CFs
+/deploy-cloud-function                                    # Auto-detect affected CFs from git diff
+/deploy-cloud-function sync-optout-scores-to-ac           # Deploy specific CF(s), skip change detection
+/deploy-cloud-function score-engagement saw-morning-report # Deploy multiple specific CFs
 ```
 
 ## Manifest
@@ -32,7 +32,7 @@ Read `deploy.yaml` at the project root. It contains:
 command -v gcloud >/dev/null 2>&1 && gcloud auth print-access-token >/dev/null 2>&1
 ```
 
-- **gcloud missing:** STOP. Tell the user to install the Google Cloud SDK (`brew install --cask google-cloud-sdk`), then re-run `/deploy`.
+- **gcloud missing:** STOP. Tell the user to install the Google Cloud SDK (`brew install --cask google-cloud-sdk`), then re-run `/deploy-cloud-function`.
 - **Not logged in / expired token:** STOP. Do not read the manifest, detect CFs, or deploy. Tell the user:
 
   ```
@@ -187,7 +187,7 @@ IAM Summary:
 git tag -f last-deploy HEAD
 ```
 
-If any deploy failed, do NOT update the tag. Explain that re-running `/deploy` will re-detect the failed CFs (since the tag hasn't moved).
+If any deploy failed, do NOT update the tag. Explain that re-running `/deploy-cloud-function` will re-detect the failed CFs (since the tag hasn't moved).
 
 ## Error Handling
 

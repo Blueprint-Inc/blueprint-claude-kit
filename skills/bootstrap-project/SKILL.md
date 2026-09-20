@@ -46,8 +46,17 @@ Update `compound-engineering.local.md` with:
   - **Ruby/Rails:** `kieran-rails-reviewer`, `dhh-rails-reviewer`, `security-sentinel`, `data-integrity-guardian`
   - **Other:** `security-sentinel`, `performance-oracle`
 
-Update `agent_docs/issue-conventions.md` with:
-- Project-specific scopes based on directory structure
+Write `.code-kit/config.json` at the repository root — the declared lookup the core
+workflows read (`docs/extension-points.md`). This skill is its **only** writer, because
+a machine-level plugin cannot write project files.
+
+- `issue_scopes`: derived from this repository's own directory structure.
+- `base_branch`: omit it unless this repository integrates somewhere other than its
+  default branch. When an overlay is installed, consult the overlay's org-defaults
+  reference for the value it supplies.
+
+Create or update `agent_docs/issue-conventions.md` with those scopes. Create it when it
+is absent — do not assume an earlier step seeded it.
 
 ### 4. Summary
 

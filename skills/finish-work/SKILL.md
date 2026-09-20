@@ -18,8 +18,10 @@ skill. Proceeding with none is fine here.
    be under `.worktrees/` or `.claude/worktrees/`. If you're in the repo's main
    checkout, STOP and ask — do not commit or push from the root.
 
-2. **Show what will ship.** Determine the base branch (staging for `blueprintos`,
-   the default branch otherwise) and run `git status` plus
+2. **Show what will ship.** Determine the base branch from `base_branch` in
+   `.code-kit/config.json` at the repository root, falling back to the repository's
+   default branch when it is absent, and say which source supplied it
+   (`docs/extension-points.md`). Then run `git status` plus
    `git diff --stat <base>...HEAD`. Summarize the change in a sentence or two.
 
 3. **Clobber check against other worktrees** (they share this repo's `.git` but are
@@ -49,18 +51,16 @@ skill. Proceeding with none is fine here.
      Default to Refs when unsure — premature Closes is a regression.
 
    **Always put keyword lines in the PR body** — do not rely on title-only `(#N)`.
-   GitHub auto-closes only when the PR merges to the **default branch**. On
-   BlueprintOS, feature PRs target `staging` (not default); `Closes` there still
-   matters for discovery: the staging→prod release PR collector and SAW
-   deploy-notifier read these lines so prod ships can auto-close and send
-   thank-yous. See `agent_docs/issue-closes-on-prod-ship.md`. For BOS full ship
-   (promotion-window, merge, deploy watch), use BOS `/ship` rather than this
-   command alone.
+   GitHub auto-closes only when the PR merges to the **default branch**. When the base
+   branch is not the default — an integration branch, for example — the keywords still
+   matter for discovery: a release-PR collector or a deploy notifier can read them so
+   the eventual production ship attributes correctly. An installed overlay may document
+   its own release path for that case; the core stops at opening the pull request.
 
    Confirm the list with the user before baking keywords into the PR.
 
 6. **Push + PR.** Push the branch and open a PR **targeting the base branch this was
-   cut from** (staging for blueprintos, the default branch otherwise) via
+   cut from** (resolved in step 2) via
    `gh pr create`. Write a value-first description: what changed and why, scaled to
    the size of the change — not a file-by-file dump. Always include the agreed
    `## Issues` section with `Closes #<n>` / `Refs #<n>` lines from step 5. If exactly
