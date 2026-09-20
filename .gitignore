@@ -1,12 +1,13 @@
 # Stale self-deploy output. The old deploy.sh could target this repo itself,
-# leaving copies of the kit at the root. Those copies SHADOW the plugin's own
-# skills when this repo is opened in a harness, so they must never be committed.
-# deploy.sh is gone, so nothing regenerates these — delete any you still have.
+# leaving copies of the kit at the root. A root .claude/commands or .claude/skills
+# SHADOWS the plugin's own skills when this repo is opened in a harness, so those
+# must never be committed. deploy.sh is gone, so nothing regenerates them.
+#
+# CLAUDE.md and AGENTS.md are deliberately NOT ignored: nothing generates them now,
+# and this repository should be able to carry its own project instructions.
 /.claude/
 /agent_docs/
 /tasks/
-/CLAUDE.md
-/AGENTS.md
 
 # Machine-local Compound Engineering config
 /compound-engineering.local.md

@@ -1,538 +1,199 @@
-# Blueprint Claude Kit
+# BlueprintOS Code Kit
 
-A portable Claude Code configuration kit that combines [compound-engineering](https://github.com/EveryInc/compound-engineering-plugin) plugin's multi-agent review system with [claude-bootstrapping](https://github.com/quadradad/claude-bootstrapping)'s autonomous development loop. Deploy to any project and get a complete issue-driven, TDD-enforced development workflow.
+An issue-driven development loop for AI coding harnesses. Worktrees, issues, backlog
+triage, an autonomous implementation loop, and post-mortem capture — installed once per
+machine, working on both Claude Code and Grok Build.
 
-## Prerequisites
+It is the workflow layer around [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin),
+not a replacement for it. Compound Engineering thinks, plans, reviews, and debugs; this
+kit moves the work through git and your issue tracker.
 
-- [Claude Code CLI](https://claude.ai/code)
-- [GitHub CLI](https://cli.github.com/) (`gh`) — authenticated with your org
-- [compound-engineering plugin](https://github.com/EveryInc/compound-engineering-plugin) installed in Claude Code
+---
 
-## Quick Start
+## Start here
 
-```bash
-# 1. Install the kit (once per machine)
+Three steps, roughly ten minutes. You need a GitHub account and one harness — **pick one,
+you do not need both.**
+
+### 1. Prerequisites
+
+```
+brew install gh
+gh auth login --hostname github.com --git-protocol https --web
+```
+
+New to GitHub, or unsure your account is set up right? The
+[GitHub guide](docs/guides/github.md) covers it end to end, including the token scopes
+these workflows need.
+
+### 2. Install
+
+Install Compound Engineering and the kit, once per machine:
+
+```
+claude plugin marketplace add EveryInc/compound-engineering-plugin
+claude plugin install compound-engineering@compound-engineering-plugin --scope user
 claude plugin marketplace add Blueprint-Inc/blueprintos-code-kit
 claude plugin install code-kit@blueprintos-code-kit --scope user
+```
 
-# 2. Open your project and bootstrap it (once per project)
+On **Grok Build**, install from the same repository through Grok's own plugin command.
+Do not also add it as a Claude Code marketplace on the same machine — Grok reads both
+stores, and the same package installed twice appears twice with no defined winner.
+
+Nothing is copied into your repositories.
+
+### 3. Bootstrap a project
+
+```
 cd /path/to/your/project
 claude
 > /bootstrap-project
 ```
 
-The kit installs once per machine as a plugin; nothing is copied into your repositories. `/bootstrap-project` then seeds the handful of files that genuinely belong in a project and configures CLAUDE.md for its stack.
+This detects your stack and writes the handful of files that genuinely belong in a
+repository: `agent_docs/`, the review-agent config, the lessons file, and
+`.code-kit/config.json`. It never overwrites a file you already have.
 
 ---
 
-## The Development Lifecycle
+## Check that it worked
 
-Every feature flows through this pipeline. You don't have to use every step every time — pick the ones that fit the size of the work.
+Installed is not the same as working. Four separate grants sit in between — plugin trust,
+folder trust, instruction discovery, and plugin enablement — and skipping one gives you an
+agent that looks fine and quietly ignores your project.
+
+**On Grok Build**, one command reports all four:
+
+```
+grok inspect
+```
+
+You want `Project trusted: yes`, a project-scoped entry under `Project Instructions`, the
+kit's skills listed with their plugin as the source, and no `collides with` annotation.
+
+**On Claude Code**, there is no single view — `claude plugin list` shows what is installed
+but cannot tell you whether your instruction file was read. Check it behaviourally: add a
+distinctive line to your project's `CLAUDE.md`, start a session, and ask the agent to
+repeat it. If it cannot, the file was not loaded, and folder trust is the usual reason.
+
+To check you are current — neither harness signals that an update exists:
+
+```
+claude plugin marketplace update blueprintos-code-kit
+claude plugin list
+```
+
+Compare the version shown against the one in this repository's `plugin.json`. A version
+behind is a version behind; nothing will tell you otherwise.
+
+Full detail on all four gates: [the setup guides](docs/guides/README.md).
+
+---
+
+## What you get
+
+| Skill | What it does |
+|---|---|
+| `/bootstrap-project` | Once per project: detect the stack, write the config the other skills read |
+| `/start-work` | Isolated worktree cut from the right base branch, with sibling-session overlap checks |
+| `/finish-work` | Commit, collect the issues this work closes, open the PR, clean up the worktree |
+| `/create-issues` | Turn a plan into tracked issues with a tracking epic and dependency links |
+| `/triage` | Backlog dependency graph, readiness, and impact scoring |
+| `/close-issue` | Validate acceptance criteria before closing, and report what it unblocked |
+| `/wiggum` | Autonomous loop: pick an issue, implement, test, PR, close, repeat |
+| `/pomo` | Capture a post-mortem lesson after a surprising fix |
+
+Each skill's own `SKILL.md` under [`skills/`](skills/) is its documentation — that file
+*is* what runs, so it cannot drift from the behaviour.
+
+### The Blueprint overlay
+
+Blueprint developers add a second package carrying org conventions — the base-branch rule,
+Cloud Functions deployment, and cross-model plan review:
+
+```
+claude plugin install code-kit-blueprint@blueprintos-code-kit --scope user
+```
+
+It is optional and additive. The core assumes nothing about any organization: no org name,
+no branch convention, no cloud provider. Everything org-specific reaches the core through
+a declared lookup — see [extension points](docs/extension-points.md).
+
+---
+
+## How the pieces fit
 
 ```
 /ce-brainstorm → /ce-plan → /create-issues → /wiggum → /ce-code-review → /close-issue → /pomo
+└──── Compound Engineering ────┘   └── kit ──┘   └────── CE ──────┘   └────── kit ──────┘
 ```
 
-### Quick Reference
+Pick the steps that match the size of the work:
 
-| Size of work | What to use |
-|-------------|-------------|
-| Quick bug fix | Fix it, `/pomo` if the root cause was surprising |
-| Small feature (< 1 hour) | `/ce-plan` → implement → `/ce-code-review` |
-| Medium feature (hours) | `/ce-brainstorm` → `/ce-plan` → `/create-issues` → implement → `/ce-code-review` |
-| Large feature (days) | Full pipeline: brainstorm → plan → issues → `/wiggum` → review → close |
-| Backlog grooming | `/triage` |
-| Isolated work session | `/start-work <task>` → implement → `/finish-work` |
+| Size | What to reach for |
+|---|---|
+| Quick fix | Just fix it. `/pomo` if the root cause surprised you. |
+| Small feature | `/ce-plan` → implement → `/ce-code-review` |
+| Medium feature | `/ce-brainstorm` → `/ce-plan` → `/create-issues` → implement → review |
+| Large feature | The full line above, with `/wiggum` doing the implementation |
+| Session hygiene | `/start-work` to begin, `/finish-work` to ship |
+| Sprint start | `/triage` to see what is ready |
+
+For what Compound Engineering's own skills do, see
+[its documentation](https://github.com/EveryInc/compound-engineering-plugin) — this README
+does not duplicate it.
 
 ---
 
-## Commands In Detail
-
-### `/ce-brainstorm` — Explore Before You Build
-
-**When to use:** At the start of any non-trivial feature. When the requirements are fuzzy, when there are multiple valid approaches, or when you want to think through edge cases before committing to a plan.
-
-**What it does:** Interactive dialogue that explores your intent, surfaces hidden requirements, evaluates approaches, and documents decisions. Produces a brainstorm doc in `docs/brainstorms/`.
-
-**Example session:**
-```
-> /ce-brainstorm
-I want to add a daily digest email for contacts who had engagement score changes
-
-Claude will ask:
-- What threshold of score change matters?
-- Should it group by direction (improved vs degraded)?
-- Who receives the digest — internal team or the contacts themselves?
-- What downstream actions should the digest enable?
-```
-
-**Tips:**
-- Don't skip this for ambiguous features — 10 minutes brainstorming saves hours of rework
-- The brainstorm doc feeds directly into `/ce-plan`, so decisions carry forward
-- You can brainstorm without planning if you just want to think something through
-
----
-
-### `/ce-plan` — Create an Implementation Plan
-
-**When to use:** Before writing code for any feature that touches 3+ files or involves architectural decisions. After brainstorming, or standalone for well-understood features.
-
-**What it does:** Produces a detailed, phased implementation plan with file lists, test strategies, and deployment steps. Saves to `docs/plans/`. If a recent brainstorm exists, it pulls in all decisions automatically.
-
-**Example:**
-```
-> /ce-plan
-Add ZeroBounce validation as a secondary gate after AudiencePoint in the intake pipeline
-```
-
-**Tips:**
-- Plans reference your CLAUDE.md architecture, so they respect project conventions
-- Review the plan before proceeding — it's cheaper to catch design issues here
-- Plans become the input for `/create-issues`
-
----
-
-### `/create-issues` — Break a Plan into Trackable Work
-
-**When to use:** After planning, when you want to track implementation as discrete GitHub issues with dependencies. Essential for multi-day features or work that multiple people might touch.
-
-**What it does:**
-1. Reads the plan from your conversation
-2. Creates a tracking epic issue
-3. Creates child issues with acceptance criteria, dependency links, and implementation notes
-4. Validates the dependency graph (no cycles)
-5. Shows you everything for approval before creating
-
-**Example:**
-```
-> /create-issues me
-```
-
-Creates issues assigned to you. Or:
-```
-> /create-issues           # unassigned
-> /create-issues jay       # resolves "jay" to a GitHub username
-```
-
-**What issues look like:**
-
-```markdown
-feat(intake): Add ZeroBounce validation gate (#52)
-
-## Summary
-Secondary validation after AudiencePoint to catch spamtraps and invalid addresses.
-
-## Dependencies
-- Blocked by: #51 — ZeroBounce API client module
-- Part of: #50 — tracking: Two-tier email validation
-
-## Acceptance Criteria
-- [ ] ZeroBounce called after AP validation passes
-- [ ] Hard fails transition to failed_validation
-- [ ] Credit pause keeps contact in validating
-- [ ] All tests pass
-```
-
-**Tips:**
-- Always creates a tracking epic when there are 2+ issues
-- Dependencies use `- Blocked by: #NN — reason` — this is the only format the automation recognizes
-- Review and modify issues before confirming — you can ask Claude to adjust any issue
-
----
-
-### `/wiggum` — Autonomous Development Loop
-
-**When to use:** When you have a set of GitHub issues ready to implement and want Claude to work through them autonomously. Best for a batch of well-defined issues with clear acceptance criteria.
-
-**What it does:** Picks the highest-impact unblocked issue, creates a feature branch, writes tests first (TDD), implements, validates, creates a PR, runs `/ce-code-review`, closes the issue, and moves to the next one. Fully autonomous — no interaction needed until it's done or stuck.
-
-**Example:**
-```
-> /wiggum              # picks the best next issue automatically
-> /wiggum 52           # starts with issue #52
-```
-
-**The loop in detail:**
+## Repository layout
 
 ```
-1. Select highest-impact unblocked issue
-2. Create feature branch (e.g., 52-zerobounce-gate)
-3. Read issue, understand requirements
-4. Write failing tests (red)
-5. Implement until tests pass (green)
-6. Run full test suite (hard gate)
-7. Commit, push, create PR
-8. Run /ce-code-review for multi-agent code review
-9. Run /close-issue to validate acceptance criteria
-10. Merge PR, delete branch
-11. → Back to step 1
+skills/                   the core package's skills — one canonical tree
+plugins/blueprint/        the Blueprint overlay: its own skills and manifests
+.claude-plugin/           Claude Code manifest and marketplace catalog
+.grok-plugin/             Grok Build manifest and marketplace catalog
+agent_docs/               reference files bootstrap-project seeds into a project
+docs/guides/              GitHub and Google Cloud setup
+docs/extension-points.md  how an overlay changes core behavior
+docs/per-project-files.md what lands in a consuming repository, and why
+scripts/                  maintenance tooling and the repository's validation gate
 ```
 
-**Safety rails:**
-- 3-strike rule: if validation fails 3 times on the same issue, it reverts, logs the failure as a comment on the issue, and moves on
-- Pre-existing test failures get their own issue — never silently ignored
-- After 2+ retries, automatically runs `/pomo` to capture what went wrong
-- Never force-pushes or rewrites history
-- One issue per branch — no bundling
-
-**Tips:**
-- Write good acceptance criteria in your issues — wiggum validates against them
-- Check the PRs it creates — they're ready for human review
-- Works best with issues from `/create-issues` since they have the right format
-- You can interrupt at any time
-
----
-
-### `/ce-code-review` — Multi-Agent Code Review
-
-**When to use:** Before merging any PR. After implementing a feature manually. When `/wiggum` runs it automatically. Anytime you want a thorough code review.
-
-**What it does:** Launches multiple specialized review agents in parallel, each checking a different dimension:
-
-| Agent | What it checks |
-|-------|---------------|
-| `kieran-python-reviewer` | Pythonic patterns, type safety, maintainability |
-| `kieran-typescript-reviewer` | Type safety, modern patterns (for TS projects) |
-| `kieran-rails-reviewer` | Rails conventions, clarity (for Ruby projects) |
-| `security-sentinel` | Vulnerabilities, input validation, auth, OWASP |
-| `performance-oracle` | Algorithmic complexity, DB queries, memory, scalability |
-| `data-integrity-guardian` | Migration safety, data constraints, transactions |
-
-**Configuration:** Edit `compound-engineering.local.md` in your project root to control which agents run:
-
-```markdown
-## Stack
-- Python 3.12
-- Google Cloud Platform
-
-## Review Agents
-- kieran-python-reviewer
-- security-sentinel
-- data-integrity-guardian
-- performance-oracle
-```
-
-**Tips:**
-- The agents are configured per-project — a Python project won't get Rails reviewers
-- Findings are actionable — they tell you what to fix, not just what's wrong
-- For large reviews (6+ agents), it automatically switches to serial mode to manage context
-
----
-
-### `/close-issue` — Quality Gate for Closure
-
-**When to use:** When you've finished implementing an issue and want to verify it meets all acceptance criteria before closing. Called automatically by `/wiggum`, but useful standalone too.
-
-**What it does:**
-1. Fetches the issue and parses acceptance criteria
-2. Runs the full test suite (hard gate — if tests fail, it stops)
-3. Validates each criterion (automated checks, code inspection, or asks you for manual ones)
-4. Checks off passing criteria on the issue
-5. Posts a structured closing comment
-6. Closes the issue
-7. Reports which downstream issues are now unblocked
-
-**Example:**
-```
-> /close-issue 52
-> /close-issue 52 53 54    # close multiple
-```
-
-**What a closing comment looks like:**
-
-```markdown
-## Closed
-
-### Summary
-Added ZeroBounce validation as secondary gate after AudiencePoint.
-
-### Changes
-- New module: processing/shared/zerobounce.py
-- Modified: processing/intake/processor.py
-
-### Acceptance Criteria
-- [x] ZeroBounce called after AP validation — PASS
-- [x] Hard fails transition to failed_validation — PASS
-- [x] Credit pause keeps contact in validating — PASS
-- [x] All tests pass — PASS
-```
-
-**Tips:**
-- If a criterion fails, it returns a structured failure — fix and retry
-- When called by `/wiggum`, it proceeds without asking for confirmation
-- Automatically checks if closing this issue unblocks others
-
----
-
-### `/triage` — Backlog Analysis
-
-**When to use:** At the start of a work session to understand what's ready to work on. When the backlog feels messy. Before sprint planning. To find dependency cycles or stale labels.
-
-**What it does:**
-1. Fetches all open issues
-2. Parses dependency links (`- Blocked by: #NN`)
-3. Builds a dependency graph and detects cycles
-4. Classifies each issue as Ready or Blocked
-5. Calculates impact scores (which issues unblock the most work)
-6. Validates labels (finds stale `blocked` labels, missing labels)
-7. Groups by category and presents a summary
-
-**Example output:**
-
-```
-## Backlog Triage Summary
-
-Total open: 12 | Ready: 7 | Blocked: 5
-
-### Highest-Impact Issues (unblock the most work)
-| #  | Title                              | Impact | Labels      |
-|----|-------------------------------------|--------|-------------|
-| 51 | feat(shared): ZeroBounce API client | 3      | enhancement |
-| 55 | infra: Add Cloud Scheduler          | 2      | infra       |
-
-### Ready Issues by Category
-#### Feature (4 ready)
-- #51 — feat(shared): ZeroBounce API client
-- #56 — feat(intake): Credit balance alerting
-
-### Blocked Issues
-| #  | Title                    | Blocked by |
-|----|--------------------------|------------|
-| 52 | feat(intake): ZB gate    | #51        |
-
-### Label Issues
-- #48: has `blocked` label but all blockers are closed
-```
-
-**Tips:**
-- Read-only by default — it only modifies labels if you confirm
-- Run this before `/wiggum` to see what's ready
-- The impact score tells you what to work on first — high-impact issues unblock the most downstream work
-
----
-
-### `/pomo` — Post-Mortem & Lessons
-
-**When to use:** After fixing a surprising bug. After a debugging session where the root cause wasn't obvious. After `/wiggum` retries (it calls this automatically). After any correction from a code review.
-
-**What it does:**
-1. Reconstructs the incident: symptom, root cause, cause chain, fix
-2. Evaluates whether it's worth a lesson (not every fix needs one)
-3. Checks for duplicate lessons
-4. Writes to `.claude/lessons.md` in a structured format
-5. Suggests CLAUDE.md updates for high-confidence, broadly applicable patterns
-
-**Lesson format:**
-
-```markdown
-### ZeroBounce regex double-escaping
-- **Wrong:** Using `\\\\b` in Python regex strings
-- **Right:** Use raw strings `r"\b"` for regex word boundaries
-- **Why:** The regex was built in Python, not deserialized from JSON
-```
-
-**Lesson lifecycle:**
-1. **Active** — Just captured, one incident
-2. **Validated** — Confirmed by 2+ incidents
-3. **Promoted** — Encoded into CLAUDE.md as a permanent rule, removed from lessons
-4. **Stale** — No matches in 30+ days, archived
-
-**Tips:**
-- Lessons should be generalizable, not incident-specific
-- Max 40 active lessons — `/pomo` prunes automatically when exceeded
-- The lifecycle prevents lesson bloat while surfacing the most valuable patterns
-- Lessons are read at session start, so they prevent repeat mistakes
-- For incidents that need the full narrative (not just a rule), write a postmortem to `agent_docs/postmortems/` — see the README there for format and criteria
-
----
-
-### `/bootstrap-project` — Initial Project Setup
-
-**When to use:** Once, after deploying the kit to a new project. Re-run if you want to regenerate project-specific configuration.
-
-**What it does:**
-1. Scans for package manifests, frameworks, test tools, CI/CD, cloud config
-2. Asks you to confirm findings and fill in gaps
-3. Configures CLAUDE.md with validation commands, project structure, and workflow section
-4. Sets up `compound-engineering.local.md` with the right review agents for your stack
-5. Customizes `agent_docs/issue-conventions.md` with project-specific scopes
-
----
-
-### `/start-work` — Isolated Work Session
-
-**When to use:** At the start of any session that will edit code and might run alongside other sessions on the same repo. Skip it for read-only or quick-answer sessions.
-
-**What it does:**
-1. Identifies the repo and its base branch (`staging` for blueprintos, the default branch otherwise)
-2. Refreshes the base (`checkout` → `fetch --prune` → `pull --ff-only`); stops if the tree is dirty rather than discarding anything
-3. Scans other active worktrees for overlap (warns if one is editing files this task will touch), then creates an isolated worktree with a `feat/`/`fix/`/`chore/` branch whose name matches the directory
-4. Confirms path/branch/base, then begins the work using the **Compound Engineering (`/ce-*`) skills by default** for non-trivial tasks (`/ce-brainstorm` → `/ce-plan` → implement → `/ce-code-review`)
-
-> /start-work fix the commission rounding bug on the salesperson view
-
----
-
-### `/finish-work` — Ship & Clean Up
-
-**When to use:** When the work in a `/start-work` worktree is done and ready to ship.
-
-**What it does:**
-1. Verifies you're in a worktree (won't push from the main checkout)
-2. Shows the diff vs base and runs a **clobber check** (warns if another worktree has uncommitted/unmerged edits to files you changed), then commits with conventions + co-author trailer (asks first if anything looks off)
-3. **Finds related open issues** the work resolves but nobody linked — matches against the branch slug, commit subjects, and changed files, then puts explicit `Closes #N` / `Refs #N` lines in an `## Issues` PR body section (never invents numbers; never title-only). GitHub auto-closes only on the default branch; on BlueprintOS, feature PRs still carry `Closes` so the staging→prod release PR and SAW deploy-notifier can attribute thank-yous. See `agent_docs/issue-closes-on-prod-ship.md`.
-4. Opens a PR targeting the correct base branch (`staging` for blueprintos), carrying the agreed issue lines
-5. Reports the PR URL, then removes the worktree and prunes on your OK
-6. Never force-deletes branches or deletes remote branches
-
-> /finish-work
-
-**BlueprintOS note:** Full staging ship + Travis prod gate live as BOS-only `/ship` and `/release` (not kit golden). Kit documents the `Closes #N` rules; BOS owns the release-PR body automation.
-
----
-
-## Practical Scenarios
-
-### "I have a feature request from the team"
-
-```
-1. Open Claude Code in your project
-2. /ce-brainstorm          — talk through the feature, surface edge cases
-3. /ce-plan                — create implementation plan
-4. /create-issues me       — break into GitHub issues assigned to you
-5. /wiggum                 — let it implement, test, PR, and close each issue
-6. Review the PRs it created
-```
-
-### "I need to fix a bug"
-
-```
-1. Open Claude Code in your project
-2. Search postmortems first  — the answer may already be there
-3. Describe the bug and let Claude fix it
-4. /pomo                   — if the root cause was surprising, capture the lesson
-5. Write a postmortem      — if it meets the criteria (recurring, non-obvious, production impact)
-```
-
-### "I'm starting a new sprint"
-
-```
-1. /triage                 — see what's ready, what's blocked, what to prioritize
-2. /wiggum                 — start working through the ready issues
-```
-
-### "Someone submitted a PR"
-
-```
-1. /ce-code-review              — multi-agent review covering code quality, security, performance
-```
-
-### "I want to add this kit to a new project"
-
-```bash
-cd /path/to/new/project
-claude
-> /bootstrap-project
-```
-
----
-
-## Reference Layer (`agent_docs/`)
-
-These files are loaded on-demand by commands, not every session. This keeps your CLAUDE.md small and saves tokens.
-
-| File | Used by | Contains |
-|------|---------|----------|
-| `issue-conventions.md` | `/create-issues`, `/close-issue`, `/wiggum` | Issue title format, body template, dependency syntax |
-| `issue-tracker-ops.md` | All issue-touching commands | GitHub CLI operations table (15 commands) |
-| `issue-closes-on-prod-ship.md` | `/finish-work`, BOS `/ship`/`/release` | Collection algorithm, Closes templates, ownership, deploy-notifier why |
-| `self-improvement.md` | `/pomo`, `/ce-code-review`, `/wiggum` | Lesson format, lifecycle, pruning rules |
-| `postmortems/README.md` | After non-obvious bug fixes | Postmortem format, when to write one |
-
-Add your own project-specific reference docs:
-
-```
-agent_docs/active-features.md    — deployed feature details
-agent_docs/api-reference.md      — external API quirks
-agent_docs/deploy-commands.md    — deployment procedures
-agent_docs/postmortems/          — incident write-ups for shared debugging knowledge
-```
-
-Reference them from CLAUDE.md's reference docs table so Claude knows when to read them.
-
----
-
-## File Structure After Deployment
-
-```
-your-project/
-├── CLAUDE.md                           # Project config with workflow section
-├── compound-engineering.local.md       # Which review agents to use
-├── agent_docs/                         # On-demand reference (saves tokens)
-│   ├── issue-conventions.md
-│   ├── issue-tracker-ops.md
-│   ├── self-improvement.md
-│   └── postmortems/
-│       └── README.md
-├── .claude/
-│   ├── settings.local.json             # Tool permissions (gitignored)
-│   ├── lessons.md                      # Active lessons (max 40)
-│   ├── commands/
-│   │   ├── wiggum.md
-│   │   ├── create-issues.md
-│   │   ├── close-issue.md
-│   │   ├── triage.md
-│   │   ├── bootstrap-project.md
-│   └── skills/
-│       ├── pomo/SKILL.md
-│       ├── deploy/SKILL.md
-│       └── ce-deep-review-beta/        # cross-model deep review of plans (beta)
-└── tasks/                              # Plans and history (optional)
-```
+There is one canonical skills tree. Each harness's manifest points at it by declared path
+rather than a copy or a symlink, so a skill cannot differ between harnesses.
 
 ---
 
 ## Customization
 
-### Review Agents
+**Review agents** — edit `compound-engineering.local.md` in your project to match your
+stack. `/bootstrap-project` writes a first draft from what it detects.
 
-Edit `compound-engineering.local.md` to match your stack:
+**Issue scopes** — edit `agent_docs/issue-conventions.md`. They appear in issue titles as
+`feat(scope): …`.
 
-| Stack | Recommended agents |
-|-------|--------------------|
-| Python | `kieran-python-reviewer`, `security-sentinel`, `performance-oracle` |
-| TypeScript | `kieran-typescript-reviewer`, `security-sentinel`, `performance-oracle` |
-| Ruby/Rails | `kieran-rails-reviewer`, `dhh-rails-reviewer`, `security-sentinel`, `data-integrity-guardian` |
-| Any + database | Add `data-integrity-guardian` |
+**Base branch** — if your repository integrates somewhere other than its default branch,
+set `base_branch` in `.code-kit/config.json`. The workflows report which source supplied
+the value, so a missing setting is visible rather than silent.
 
-### Issue Scopes
-
-Edit `agent_docs/issue-conventions.md` to define scopes that match your project's directory structure. These appear in issue titles: `feat(intake): ...`, `fix(scoring): ...`
-
-### Settings Permissions
-
-Add `gh` CLI permissions to `.claude/settings.local.json` so the issue commands don't prompt every time:
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(gh issue *)",
-      "Bash(gh pr *)",
-      "Bash(gh api *)"
-    ]
-  }
-}
-```
+**Permissions** — the issue workflows call `gh` constantly. Adding `gh` prefixes to your
+harness's allowlist removes the prompting. Never allowlist a command whose text contains a
+token; the harness stores the whole string.
 
 ---
 
-## Design Decisions
+## Contributing
 
-**Why combine two systems?** Compound-engineering excels at multi-agent review and planning. Claude-bootstrapping excels at autonomous execution and issue management. Together they cover the full lifecycle without gaps.
+`python3 scripts/validate-kit.py` is the gate, and it runs in CI on every pull request. It
+checks packaging, portability, and the context budget — every check in it corresponds to a
+defect that actually happened here. `bash scripts/test-validate-kit.sh` proves the gate
+still catches them.
 
-**Why `agent_docs/`?** A 900-line CLAUDE.md wastes tokens every session on reference data that's rarely needed. Moving it to on-demand files saves ~90% of context budget. Commands load what they need, when they need it.
+The plugin set is deliberately two: Compound Engineering and Impeccable. Adding a third is
+a decision with a measured context cost, not a default — see
+[the baseline](docs/claude-setup-baseline.md) for what was removed and why.
 
-**Why `/pomo` with lifecycle?** Not all lessons are equal. The Active → Validated → Promoted → Stale lifecycle prevents lesson files from growing forever while surfacing high-value patterns into permanent CLAUDE.md rules.
+## License
 
-**Why TDD in `/wiggum`?** Tests-first is the hard gate. If wiggum can't write a failing test, it can't verify its implementation works. This prevents the "it compiles so it must work" failure mode.
+MIT. See [LICENSE](LICENSE).
