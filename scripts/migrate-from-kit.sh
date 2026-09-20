@@ -87,8 +87,8 @@ fi
 
 # Both names installed at once doubles the context cost silently.
 if command -v claude >/dev/null 2>&1; then
-  both=$(claude plugin list 2>/dev/null | grep -cE "$OLD_NAME|$NEW_NAME" || echo 0)
-  [ "$both" -gt 1 ] && note "more than one kit plugin appears installed — check for both the old and new name, which doubles context cost"
+  both=$(claude plugin list 2>/dev/null | grep -cE "$OLD_NAME|$NEW_NAME" | head -1); both=${both:-0}
+  [ "$both" -gt 1 ] 2>/dev/null && note "more than one kit plugin appears installed — check for both the old and new name, which doubles context cost"
 fi
 
 say ""
