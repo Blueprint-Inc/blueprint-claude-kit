@@ -9,6 +9,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GOLDEN="$SCRIPT_DIR/golden"
 KIT_VERSION=$(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || echo "unknown")
 
+# --- Superseded by plugin packaging (plan unit U1/U2 moved the source trees) ---
+# The loops below read from golden/.claude/; those trees are gone. Without this guard the
+# script copies nothing, prints "Deployment complete!", and stamps a version. Fail loudly
+# instead. Unit U5 removes this script entirely.
+if [ ! -d "$GOLDEN/.claude/skills" ] || [ ! -d "$GOLDEN/.claude/commands" ]; then
+    echo "deploy.sh is superseded: skills and commands now ship as plugins." >&2
+    echo "Install with the marketplace in .claude-plugin/marketplace.json instead." >&2
+    exit 1
+fi
+
 # --- Flags ---
 usage() {
     echo "Usage: $0 [options] <target-project-path>"

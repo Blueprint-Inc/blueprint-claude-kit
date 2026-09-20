@@ -21,7 +21,7 @@ When CLAUDE.md defines a Task Tracker section using `tasks/todo.md`:
 - **Step 2 (Select):** Pick the highest-impact unblocked task from the Active table
 - **Step 3 (Branch):** Use `T-NN-slug` branch naming (e.g., `T-3-add-auth`)
 - **Step 8 (Commit):** Use `Completes T-NN` instead of the smart close syntax
-- **Step 9 (PR):** Target `main` (no release branch in todo.md mode)
+- **Step 9 (PR):** Target `<base>` as resolved in step 3 (no release branch in todo.md mode)
 - **Step 10 (Close):** Run `/close-issue T-NN` to move the task to Done
 - **Release Completion:** Not applicable — loop ends when the Active table is empty
 
@@ -47,11 +47,17 @@ Find the highest-impact unblocked issue:
 
 ### 3. Branch
 
-Create a feature branch from main:
+Resolve the base branch first — never assume `main`. Read `base_branch` from
+`.code-kit/config.json` at the repository root; when it is absent, fall back to the
+repository's default branch (`git symbolic-ref --quiet refs/remotes/origin/HEAD | sed
+'s#refs/remotes/origin/##'`). Report which source supplied it. This loop merges without
+a human, so branching from the wrong base would auto-merge into it too.
+
+Then create a feature branch from `<base>`:
 
 ```bash
-git checkout main
-git pull origin main
+git checkout <base>
+git pull origin <base>
 git checkout -b 53-feature-slug
 ```
 
@@ -116,11 +122,11 @@ git push -u origin 53-feature-branch
 
 ### 9. PR
 
-Create a pull request targeting main:
+Create a pull request targeting `<base>` (resolved in step 3):
 
 ```bash
 gh pr create \
-  --base main \
+  --base <base> \
   --title "feat(scope): Implement feature X (#53)" \
   --body "PR_BODY"
 ```
@@ -142,8 +148,8 @@ Run `/close-issue` to validate acceptance criteria and close.
 
 ```bash
 gh pr merge PR_NUMBER --merge --delete-branch
-git checkout main
-git pull origin main
+git checkout <base>
+git pull origin <base>
 ```
 
 ### 13. Loop

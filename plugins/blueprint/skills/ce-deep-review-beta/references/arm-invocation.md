@@ -7,7 +7,7 @@ the plan (never filter records post-hoc — the document would already have been
 ## Invocation
 
 ```bash
-SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; bash "$SKILL_DIR/scripts/panel-critique.sh" --models <subset> "<plan-path>"
+bash "<absolute path of the directory containing the SKILL.md you just read>/scripts/panel-critique.sh" --models <subset> "<plan-path>"
 ```
 
 - `<subset>` is the comma-separated list from the consent gate (e.g. `codex,agy`).

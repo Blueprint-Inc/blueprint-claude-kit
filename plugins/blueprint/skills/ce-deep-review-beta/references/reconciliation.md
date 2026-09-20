@@ -16,7 +16,7 @@ thin-slice `<plan>.deep-review-draft.md` was the pre-verification placeholder.
 Before writing a fresh `<plan>.deep-review.md`, rotate any existing one out of the way and prune:
 
 ```bash
-SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; python3 "$SKILL_DIR/scripts/reconcile.py" rotate "<plan>.deep-review.md"
+python3 "<absolute path of the directory containing the SKILL.md you just read>/scripts/reconcile.py" rotate "<plan>.deep-review.md"
 ```
 
 - If `<plan>.deep-review.md` exists, it is renamed to `<plan>.deep-review.<ISO>.md` (UTC stamp).
@@ -60,7 +60,7 @@ other is "was the output grounded?" Keep them as separate fields; do not collaps
    CONFIRMED. Render deterministically:
 
    ```bash
-   SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; python3 "$SKILL_DIR/scripts/reconcile.py" render-cross-model "<verify-records.json>"
+   python3 "<absolute path of the directory containing the SKILL.md you just read>/scripts/reconcile.py" render-cross-model "<verify-records.json>"
    ```
 
 3. **Decision-changing union** — a short closing section listing the findings (panel + CONFIRMED

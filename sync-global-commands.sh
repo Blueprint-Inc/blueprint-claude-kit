@@ -9,6 +9,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GOLDEN_COMMANDS="$SCRIPT_DIR/golden/.claude/commands"
+
+# Superseded by plugin packaging: the golden command tree moved to skills/ (unit U2).
+if [ ! -d "$GOLDEN_COMMANDS" ]; then
+    echo "sync-global-commands.sh is superseded: commands now ship as plugin skills." >&2
+    echo "Install with the marketplace in .claude-plugin/marketplace.json instead." >&2
+    exit 1
+fi
 DEST="${CLAUDE_HOME:-$HOME/.claude}/commands"
 
 # Commands to expose globally. Add more slugs here as needed.

@@ -34,14 +34,17 @@ wait for the reply — never skip the gate.
    never prints credential values):
 
    ```bash
-   SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; bash "$SKILL_DIR/scripts/env-detect.sh"
+   bash "<absolute path of the directory containing the SKILL.md you just read>/scripts/env-detect.sh"
    ```
 
-   `$SKILL_DIR` is the absolute path of the directory this SKILL.md was loaded from, which
-   you substitute yourself — set it on the same line, keeping the trailing `;`. Do not use a
-   harness-provided path variable: `CLAUDE_SKILL_DIR` is set only by Claude Code, and where it
-   is unset the path silently expands to `/scripts/...`, the script does not run, and an empty
-   result must NOT be read as "zero arms".
+   Substitute the bracketed path yourself with the absolute directory this SKILL.md was
+   loaded from, and keep the command starting with `bash` or `python3` so it still matches
+   this skill's `allowed-tools` patterns. Do not introduce a leading shell assignment, and
+   do not use a harness-provided path variable: `CLAUDE_SKILL_DIR` is set only by Claude
+   Code, and where it is unset the path silently expands to `/scripts/...` and the script
+   does not run. If a script cannot be run, say arm detection could not run and fall back
+   to the platform's own skill-relative path before deciding coverage — an empty result
+   must NOT be read as "zero arms".
 
    Parse `{"codex":"ok|unauthed|missing","agy":"ok|unauthed|missing|unavailable"}`. An arm is
    **available** only when `ok` (installed + an offline auth signal); `unavailable` means
@@ -79,7 +82,7 @@ copy (do not paraphrase them).
 1. **Content preview.** Run gitleaks via the Bash tool:
 
    ```bash
-   SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; bash "$SKILL_DIR/scripts/gitleaks-scan.sh" "<plan-path>"
+   bash "<absolute path of the directory containing the SKILL.md you just read>/scripts/gitleaks-scan.sh" "<plan-path>"
    ```
 
    - If it returns hits → render them as `Line N (rule-id): <redacted preview>` in the gate stem.
@@ -122,7 +125,7 @@ filter records post-hoc). Read `references/arm-invocation.md` for record parsing
 progress/timeout streaming format, and `references/ship-state-machine.md` for the run-state model.
 
 ```bash
-SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; bash "$SKILL_DIR/scripts/panel-critique.sh" --models <subset> "<plan-path>"
+bash "<absolute path of the directory containing the SKILL.md you just read>/scripts/panel-critique.sh" --models <subset> "<plan-path>"
 ```
 
 - **If the harness blocks this call** (auto-mode egress classifier; note `allowed-tools` is not sufficient
@@ -143,7 +146,7 @@ Ground every raw cross-model finding against the plan before presenting it. Read
 and the brittleness caveats — do not paraphrase them.
 
 ```bash
-SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; python3 "$SKILL_DIR/scripts/verify-findings.py" verify-records "<plan-path>" "${CMRE_OUT_DIR:-/tmp/cmre-panel}/records"
+python3 "<absolute path of the directory containing the SKILL.md you just read>/scripts/verify-findings.py" verify-records "<plan-path>" "${CMRE_OUT_DIR:-/tmp/cmre-panel}/records"
 ```
 
 - Parse `{"verified": [{model, lens, id, text, verdict, grounding_quote}], "counts": {...}}`. Each
@@ -165,7 +168,7 @@ the decision-changing union — do not paraphrase them.
 1. **Rotate** any existing verified sidecar out of the way first (data-loss-safe; keeps the 5 newest):
 
    ```bash
-   SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; python3 "$SKILL_DIR/scripts/reconcile.py" rotate "<plan-path>.deep-review.md"
+   python3 "<absolute path of the directory containing the SKILL.md you just read>/scripts/reconcile.py" rotate "<plan-path>.deep-review.md"
    ```
 
    Leave any existing `<plan-path>.deep-review-draft.md` in place — it is a historical thin-slice
@@ -174,7 +177,7 @@ the decision-changing union — do not paraphrase them.
    CONFIRMED):
 
    ```bash
-   SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"; python3 "$SKILL_DIR/scripts/reconcile.py" render-cross-model "<verify-records.json>"
+   python3 "<absolute path of the directory containing the SKILL.md you just read>/scripts/reconcile.py" render-cross-model "<verify-records.json>"
    ```
 3. **Write** `<plan-path>.deep-review.md` with:
    - Frontmatter: `skill_phase: verified`, `verification: quote-grep-backstop`,
