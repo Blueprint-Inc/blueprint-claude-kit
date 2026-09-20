@@ -5,3 +5,7 @@
 
 # Manifests are read by plugin tooling on every harness; keep them stable.
 *.json text eol=lf
+
+# SKILL.md bodies are this package's executable surface, not just prose.
+*.md text eol=lf
+*.tmpl text eol=lf
