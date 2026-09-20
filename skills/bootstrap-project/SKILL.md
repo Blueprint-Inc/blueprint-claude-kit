@@ -50,12 +50,15 @@ Write `.code-kit/config.json` at the repository root — the declared lookup the
 workflows read. This skill is its **only** writer, because
 a machine-level plugin cannot write project files.
 
-- `issue_scopes`: derived from this repository's own directory structure.
 - `base_branch`: omit it unless this repository integrates somewhere other than its
   default branch. When an overlay is installed, consult the overlay's org-defaults
   reference for the value it supplies.
+- `preflight`: the check names the installed overlay's defaults reference declares for
+  this repository (today `gcloud-auth`). Omit the key when no overlay is installed or
+  none apply. These are names the core already knows how to run, never command strings.
 
-Create or update `agent_docs/issue-conventions.md` with those scopes. Create it when it
+Create or update `agent_docs/issue-conventions.md` with the issue scopes, derived from
+this repository's own directory structure. That file is the single home for scopes. Create it when it
 is absent — do not assume an earlier step seeded it.
 
 ### 4. Summary

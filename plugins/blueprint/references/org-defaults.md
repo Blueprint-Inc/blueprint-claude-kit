@@ -24,10 +24,20 @@ is created, because the first thing most tasks do is read from BigQuery or deplo
 function. The overlay supplies this as a preflight step rather than as core behavior:
 the core has no opinion about cloud providers.
 
-Preflight: when `gcloud` is installed, confirm `gcloud auth print-access-token` succeeds
-before creating a worktree. If it fails, stop and ask the user to run `gcloud auth login`
-rather than creating a worktree the task cannot use. When `gcloud` is not installed, skip
-it — not every machine or project needs it.
+Value: `preflight: ["gcloud-auth"]` for repositories that deploy to Google Cloud; omit
+the key otherwise. `gcloud-auth` is a check name the core already knows how to run — what
+it runs and what it does on failure belong to the core's extension-point contract, not
+here. Do not put a command string in the config.
+
+## Release path
+
+Blueprint feature pull requests target `staging`, not the default branch. GitHub only
+auto-closes on the default branch, so `Closes` lines on a feature PR matter for discovery
+rather than closing: the staging-to-prod release-PR collector and the deploy notifier read
+them so the eventual production ship attributes correctly. See
+`agent_docs/issue-closes-on-prod-ship.md`. A full BlueprintOS ship — promotion window,
+merge, deploy watch — uses the BlueprintOS `/ship` workflow rather than `finish-work`
+alone.
 
 ## Prerequisite: the Compound Engineering plugin
 
