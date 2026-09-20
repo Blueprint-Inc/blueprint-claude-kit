@@ -1,7 +1,6 @@
 ---
 name: deploy
 description: Smart Cloud Function deployment — detects which CFs are affected by code changes, confirms with user, deploys with env-var and IAM preservation, and tags the deploy point.
-user_invocable: true
 ---
 
 # /deploy — Smart Cloud Function Deployment

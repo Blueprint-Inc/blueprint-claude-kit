@@ -1,7 +1,6 @@
 ---
 name: finish-work
 description: Finish the current worktree branch — commit, push, PR, then clean up
-user_invocable: true
 ---
 
 # /finish-work — Ship & Clean Up
@@ -9,7 +8,9 @@ user_invocable: true
 Close out the current work session. This should be running inside an isolated
 worktree created by `/start-work`.
 
-**Optional context:** $ARGUMENTS
+**Optional context:** the input this skill was invoked with, if any. Reason over it
+rather than expecting a substituted token; it may come from the user or from another
+skill. Proceeding with none is fine here.
 
 ## Steps
 

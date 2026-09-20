@@ -1,7 +1,6 @@
 ---
 name: pomo
 description: Use when a bug or issue has been fixed and you want to reflect on what happened, capture lessons learned, and update project memory. Invoke after debugging sessions, incident resolution, or any fix where the root cause was surprising or non-obvious.
-user_invocable: true
 ---
 
 # /pomo — Post-Mortem
