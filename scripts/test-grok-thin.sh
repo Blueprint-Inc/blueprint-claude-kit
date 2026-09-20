@@ -5,7 +5,8 @@ KIT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/grok-thin-test.XXXXXX")
 DEFAULT="$TMP/default"
 THIN="$TMP/thin"
-mkdir -p "$DEFAULT/installed-plugins" "$DEFAULT/hooks"
+mkdir -p "$DEFAULT/installed-plugins/compound-engineering-plugin-fake/skills/ce-worktree" "$DEFAULT/hooks"
+printf '# fake\n' > "$DEFAULT/installed-plugins/compound-engineering-plugin-fake/skills/ce-worktree/SKILL.md"
 printf '{}\n' > "$DEFAULT/auth.json"
 # Pretend default still has fat plugins.
 printf 'enabled = ["cloudflare", "sentry", "compound-engineering"]\n' > "$DEFAULT/config.toml"
@@ -17,6 +18,7 @@ bash "$KIT_ROOT/scripts/grok-thin.sh" --install-only
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
 [ -f "$THIN/config.toml" ] || fail "thin config missing"
+[ -L "$THIN/bundled/skills/ce-worktree" ] || fail "ce-worktree not aliased into bundled/skills"
 grep -q 'compound-engineering' "$THIN/config.toml" || fail "CE not enabled"
 grep -q 'impeccable' "$THIN/config.toml" || fail "Impeccable not enabled"
 grep -q 'hooks = false' "$THIN/config.toml" || fail "claude hooks not muted"

@@ -36,6 +36,41 @@ if [ -d "$DEFAULT_HOME/installed-plugins" ] && [ ! -e "$THIN_HOME/installed-plug
   ok "linked installed-plugins store"
 fi
 
+# Grok's skill-read UI always opens $GROK_HOME/bundled/skills/<name>/SKILL.md.
+# Plugin skills live under installed-plugins, so that first path 404s (seen as
+# "Read 1 skill · 1 failed" for ce-worktree). Alias them into bundled/skills.
+python3 - "$THIN_HOME" <<'PY'
+import sys
+from pathlib import Path
+home = Path(sys.argv[1])
+bundled = home / "bundled" / "skills"
+plugins = home / "installed-plugins"
+bundled.mkdir(parents=True, exist_ok=True)
+allow_frags = ("compound-engineering", "impeccable")
+wanted = {}
+if plugins.exists():
+    for skill_md in plugins.glob("**/skills/*/SKILL.md"):
+        parts = [p.lower() for p in skill_md.parts]
+        if not any(f in "/".join(parts) for f in allow_frags):
+            continue
+        wanted[skill_md.parent.name] = skill_md.parent.resolve()
+linked = 0
+for dest in list(bundled.iterdir()) if bundled.exists() else []:
+    if dest.is_symlink() and dest.name not in wanted:
+        dest.unlink()
+for name, src in wanted.items():
+    dest = bundled / name
+    if dest.exists() or dest.is_symlink():
+        if dest.is_symlink() and dest.resolve() == src:
+            continue
+        if dest.exists() and not dest.is_symlink():
+            continue
+        dest.unlink()
+    dest.symlink_to(src)
+    linked += 1
+print("  grok-thin: aliased %d CE/Impeccable skills into bundled/skills" % linked)
+PY
+
 BOS_ROOT="${GROK_THIN_BOS_ROOT:-$KIT_ROOT/../blueprintos}"
 if [ -d "$BOS_ROOT" ]; then
   BOS_ROOT="$(cd "$BOS_ROOT" && pwd)"
