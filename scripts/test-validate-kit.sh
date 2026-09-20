@@ -84,6 +84,13 @@ p.write_text(s.replace('`preflight`', '`removed-key`'))
 EOF
 expect_fail "an extension point losing its writer"; restore skills/bootstrap-project/SKILL.md
 
+
+printf '\nRun `gcloud config get-value project` in blueprint-data-warehouse.\n' >> docs/guides/github.md
+expect_fail "a real identifier leaking into a guide"; restore docs/guides/github.md
+
+printf '\nTry `gcloud auth list --format=value(account)` next.\n' >> docs/guides/github.md
+expect_fail "an unquoted --format returning"; restore docs/guides/github.md
+
 echo
 printf '  %-44s ' "a clean tree"
 if python3 scripts/validate-kit.py >/dev/null 2>&1; then echo "passes"; pass=$((pass+1)); else echo "FAILS (unexpected)"; fail=$((fail+1)); fi

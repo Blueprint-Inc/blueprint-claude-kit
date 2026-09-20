@@ -214,6 +214,36 @@ def check_extension_points() -> None:
             fail(f"extension point '{k}' is declared but no core skill reads it")
 
 
+def check_guides() -> None:
+    """Public setup guides must not carry a real identifier or an unquoted --format.
+
+    The guides are written by running every command against a live account, so a real
+    org, project, or billing id can reach a public repository by copy-paste. And an
+    unquoted --format=value(...) fails in both zsh and bash, which is exactly the
+    paste-time breakage the guides exist to prevent.
+    """
+    guides = ROOT / "docs" / "guides"
+    if not guides.is_dir():
+        notes.append("no docs/guides/ directory; skipping guide checks")
+        return
+    leak = re.compile(
+        r"blueprint-data-warehouse|jay\.graves|\bjaybna\b|gho_[A-Za-z0-9]|"
+        r"\b[0-9A-F]{6}-[0-9A-F]{6}-[0-9A-F]{6}\b",
+        re.I)
+    for f in sorted(guides.rglob("*.md")):
+        text = f.read_text(errors="replace")
+        for i, line in enumerate(text.splitlines(), 1):
+            if leak.search(line):
+                fail(f"{f.relative_to(ROOT)}:{i}: a real account, project, or billing "
+                     f"identifier appears in a public guide")
+            # An unquoted --format=value(...) breaks on paste in zsh and bash. Lines that
+            # are demonstrating the broken form say so.
+            if re.search(r"--format=[^'\"`\s]", line) and "fails in both" not in line \
+                    and "works;" not in line and "works." not in line:
+                fail(f"{f.relative_to(ROOT)}:{i}: unquoted --format argument — "
+                     f"it fails on paste in zsh and bash")
+
+
 def check_budget() -> None:
     for name, pkg in PACKAGES.items():
         tree = pkg["skills"]
@@ -233,7 +263,8 @@ def main() -> int:
     checks = [check_budget] if budget_only else [
         check_manifests_parse, check_version_parity, check_no_schema_key,
         check_catalog_sources_resolve, check_declared_skills_paths,
-        check_skills, check_banned_constructs, check_extension_points, check_budget,
+        check_skills, check_banned_constructs, check_extension_points,
+        check_guides, check_budget,
     ]
     for c in checks:
         try:
