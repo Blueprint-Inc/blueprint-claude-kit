@@ -137,7 +137,7 @@ session transcripts on one machine.
 | n8n-mcp | 0 | Registration pointed at a deleted directory |
 
 **Kept:** `analytics-mcp` (19 calls), `nanobanana-mcp` (image gen), and the
-client WordPress servers (`ncs-wordpress`, `turniptruck-wordpress`) — out of
+two client WordPress servers — out of
 scope. Also pruned **5 stale project entries** (directories that no longer
 exist) from `~/.claude.json`.
 
