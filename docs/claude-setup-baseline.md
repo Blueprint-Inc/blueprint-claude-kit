@@ -174,3 +174,10 @@ counts, and the re-check grep only, never the JSON.
 Run `/context` in a session — if system-prompt overhead is well above ~15k
 tokens in a plain dev project, something has crept back in: check for new
 global skills, duplicate plugins, or a regrown lessons file.
+
+## Grok thin session (trial)
+
+Grok loads Claude and Cursor MCP, hooks, and skills by default, so this Claude
+plugin table does not thin a Grok turn. The opt-in thin Grok home is documented
+in `docs/grok-tempo-thin-session.md`. It does not change `setup.sh` or default
+`$HOME/.grok` until you promote.
