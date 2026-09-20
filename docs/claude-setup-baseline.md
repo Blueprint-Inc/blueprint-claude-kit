@@ -64,7 +64,7 @@ marketplaces doubles its context cost silently.
 ## Coach lessons budget
 
 The global `coach-lessons.md` is injected into every session. It is generated
-from instinct YAMLs in `blueprint-code-coach` and capped at **15 lessons
+from instinct YAMLs in the coach repository and capped at **15 lessons
 (~3.3k tokens)** — see `rank_and_cap` in `src/generate_coach_lessons.py`.
 Raising the cap raises every developer's per-session cost; duplicates should be
 retired at the YAML source (`confidence: 0.1`), and every retirement needs a
@@ -110,8 +110,7 @@ by its hooks and **30 sessions detoured into multi-minute re-indexing**. The
 
 Removed: the Grep/Glob/Bash hooks (this was the nag source), 7 global skills,
 the MCP server, ~1GB of `.gitnexus/` indexes, and the CLAUDE.md/AGENTS.md
-sections in bender-automation, blueprint-code-coach, blueprintos, prepotente,
-and styleblueprint-audience-warehouse. If you have GitNexus hooks in your own
+sections in all five active repositories. If you have GitNexus hooks in your own
 `~/.claude/settings.json`, remove them too.
 
 Lesson for future tooling: before adopting anything that hooks every tool

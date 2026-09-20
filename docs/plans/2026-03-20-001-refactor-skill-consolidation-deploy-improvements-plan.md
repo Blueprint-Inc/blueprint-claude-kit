@@ -327,4 +327,4 @@ Phases 1 and 3 can be worked in parallel since they touch different files.
 - **Plugin settings:** `~/.claude/settings.json` (`enabledPlugins` dictionary)
 - **ce-review skill:** `~/.claude/plugins/cache/every-marketplace/compound-engineering/2.46.0/skills/ce-review/SKILL.md`
 - **ECC instinct system:** `github.com/affaan-m/everything-claude-code` — evaluated, adopted YAML format only
-- **Current deploy script:** `/Users/jaygraves/Projects/blueprint-claude-kit/deploy.sh`
+- **Current deploy script:** `deploy.sh` at the kit repository root
