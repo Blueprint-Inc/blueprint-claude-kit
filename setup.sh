@@ -227,6 +227,25 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 9. Grok keep-set (default sessions)
+# ---------------------------------------------------------------------------
+section "Grok keep-set"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -x "$SCRIPT_DIR/scripts/grok-thin.sh" ]; then
+  dl "Applying Compound Engineering + Impeccable Grok baseline to ~/.grok..."
+  if bash "$SCRIPT_DIR/scripts/grok-thin.sh" --default --install-only; then
+    ok "Grok keep-set applied (plain grok). Jev hook needs scripts/pickup-jev-key.sh"
+    track_install
+  else
+    fail "Grok keep-set apply failed"
+    track_fail
+  fi
+else
+  fail "scripts/grok-thin.sh missing"
+  track_fail
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo ""

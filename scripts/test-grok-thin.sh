@@ -86,5 +86,23 @@ if [ -d "$BOS/commands" ]; then
   grep -q 'open-user-issues' "$THIN/config.toml" || fail "open-user-issues not in skills.paths"
 fi
 
+# --default writes the keep-set into the default Grok home and does not
+# symlink auth onto itself.
+DEF="$TMP/default-promote"
+mkdir -p "$DEF/installed-plugins/compound-engineering-plugin-fake/skills/ce-worktree"
+printf '# fake\n' > "$DEF/installed-plugins/compound-engineering-plugin-fake/skills/ce-worktree/SKILL.md"
+printf 'enabled = ["cloudflare"]\n' > "$DEF/config.toml"
+printf '{}\n' > "$DEF/auth.json"
+export GROK_DEFAULT_HOME="$DEF"
+bash "$KIT_ROOT/scripts/grok-thin.sh" --default --install-only
+ls "$DEF"/config.toml.bak-baseline-* >/dev/null 2>&1 || fail "default apply did not back up config.toml"
+grep -q 'compound-engineering' "$DEF/config.toml" || fail "default apply missing CE"
+[ -f "$DEF/auth.json" ] && [ ! -L "$DEF/auth.json" ] || fail "default apply must not replace auth.json with a symlink"
+python3 -c '
+import json,sys
+d=json.load(open(sys.argv[1]))
+assert "PreToolUse" not in d["hooks"]
+' "$DEF/hooks/thin-session.json" || fail "default apply installed Jev without a key"
+
 echo "OK grok-thin smoke ($TMP)"
 rm -rf "$TMP"

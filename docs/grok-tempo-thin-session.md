@@ -1,7 +1,9 @@
 # Grok tempo thin session
 
-Opt-in thin Grok home for a faster Observe-Orient-Decide-Act loop.
-Default Grok (`$HOME/.grok`) stays until you promote.
+This is the default Grok setup for BlueprintOS Code Kit. `setup.sh` and
+`bash scripts/grok-thin.sh --default --install-only` write it to `$HOME/.grok`
+so plain `grok` is the keep-set. A side-by-side trial home (`$HOME/.grok-thin`)
+still exists if you omit `--default`.
 
 Keep-set: Compound Engineering, Impeccable, kit issue-loop skills, BlueprintOS tasks MCP, Playwright MCP.
 Operator slash commands on the thin home: `/deploy`, `/ship`, `/release`, `/start-work`, `/finish-work`, `/sb-factory-triage`.
@@ -12,19 +14,13 @@ qmd is not loaded.
 
 ## Install (this machine)
 
-From the kit checkout:
+From the kit checkout (also runs from `setup.sh`):
 
 ```bash
-bash scripts/grok-thin.sh --install-only
+bash scripts/grok-thin.sh --default --install-only
 ```
 
-Then start thin Grok:
-
-```bash
-bash scripts/grok-thin.sh
-```
-
-Default `grok` still uses `$HOME/.grok`.
+Then start Grok as usual (`grok`). That session is the keep-set.
 
 ## Smoke
 
@@ -41,27 +37,21 @@ Then, in a thin session:
 
 Playwright MCP is an accepted extra browser stack against the host-native-browser rule.
 
-## Promote
+## Promote / default
 
-Promotion is a command you run. It is not a side effect of install.
-
-1. Timestamped copy of `$HOME/.grok/config.toml` (and `$HOME/.grok/hooks` if present).
-2. Copy `$HOME/.grok-thin/config.toml` and `$HOME/.grok-thin/hooks` onto the default home.
-3. Launch plain `grok` and re-run inspect.
-
-Do not use `scripts/apply-baseline-plugins.sh` as the Grok promote path. That script only flips Claude `enabledPlugins`.
+`setup.sh` and `bash scripts/grok-thin.sh --default --install-only` write the
+keep-set into `$HOME/.grok` (timestamped `config.toml.bak-baseline-*` first).
+Plain `grok` is then the keep-set. Do not use `scripts/apply-baseline-plugins.sh`
+for Grok; that script only flips Claude `enabledPlugins`.
 
 ## Rollback
 
-Restore the timestamped backup of `$HOME/.grok/config.toml` and hooks.
+Restore the timestamped `$HOME/.grok/config.toml.bak-baseline-*` over `config.toml`.
 
 ## Apply for another developer
 
-After the trial works:
-
-1. Clone this repository.
-2. Run `bash scripts/grok-thin.sh --install-only` then `bash scripts/grok-thin.sh`.
-3. Do not change `setup.sh`. Do not rewrite their default Grok home until they promote.
+Clone this kit and run `setup.sh`, or `bash scripts/grok-thin.sh --default --install-only`.
+Then `bash scripts/pickup-jev-key.sh` if they should have Jev.
 
 ## Jev key (developers)
 

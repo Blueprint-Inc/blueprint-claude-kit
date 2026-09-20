@@ -1,39 +1,56 @@
 #!/usr/bin/env bash
-# Launch the opt-in thin Grok session. Does not rewrite $HOME/.grok.
-# Usage: bash scripts/grok-thin.sh [--install-only] [--home DIR] [grok args...]
+# Apply the Blueprint Grok keep-set, then optionally launch Grok.
+# Usage: bash scripts/grok-thin.sh [--default] [--install-only] [--home DIR] [grok args...]
+#   --default  write into $HOME/.grok (kit/setup default). Backs up config.toml first.
+#   without --default: still uses $HOME/.grok-thin for a side-by-side trial.
 set -euo pipefail
 
 KIT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEFAULT_HOME="${GROK_DEFAULT_HOME:-$HOME/.grok}"
 THIN_HOME="${GROK_THIN_HOME:-$HOME/.grok-thin}"
 INSTALL_ONLY=0
-if [ "${1:-}" = "--install-only" ]; then
-  INSTALL_ONLY=1
-  shift
-fi
-if [ "${1:-}" = "--home" ]; then
-  THIN_HOME="$2"
-  shift 2
+APPLY_DEFAULT=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --install-only) INSTALL_ONLY=1; shift ;;
+    --default) APPLY_DEFAULT=1; shift ;;
+    --home) THIN_HOME="$2"; shift 2 ;;
+    *) break ;;
+  esac
+done
+if [ "$APPLY_DEFAULT" = 1 ]; then
+  THIN_HOME="$DEFAULT_HOME"
 fi
 
 ok() { printf '  grok-thin: %s\n' "$1"; }
 
 mkdir -p "$THIN_HOME/hooks" "$THIN_HOME/state"
 
-# Auth: share login with default home. Copy if symlink is refused later.
-if [ -f "$DEFAULT_HOME/auth.json" ] && [ ! -e "$THIN_HOME/auth.json" ]; then
-  ln -s "$DEFAULT_HOME/auth.json" "$THIN_HOME/auth.json"
-  [ -f "$DEFAULT_HOME/auth.json.lock" ] && ln -sf "$DEFAULT_HOME/auth.json.lock" "$THIN_HOME/auth.json.lock"
-  ok "linked auth from default Grok home"
-fi
-if [ -f "$DEFAULT_HOME/mcp_credentials.json" ] && [ ! -e "$THIN_HOME/mcp_credentials.json" ]; then
-  ln -s "$DEFAULT_HOME/mcp_credentials.json" "$THIN_HOME/mcp_credentials.json"
+SAME_HOME=0
+if [ "$(cd "$THIN_HOME" 2>/dev/null && pwd)" = "$(cd "$DEFAULT_HOME" 2>/dev/null && pwd)" ]; then
+  SAME_HOME=1
 fi
 
-# Plugin store: thin config enables CE+Impeccable only; files live in the default store.
-if [ -d "$DEFAULT_HOME/installed-plugins" ] && [ ! -e "$THIN_HOME/installed-plugins" ]; then
-  ln -s "$DEFAULT_HOME/installed-plugins" "$THIN_HOME/installed-plugins"
-  ok "linked installed-plugins store"
+if [ "$SAME_HOME" = 1 ] && [ -f "$THIN_HOME/config.toml" ]; then
+  BAK="$THIN_HOME/config.toml.bak-baseline-$(date +%Y%m%d%H%M%S)"
+  cp "$THIN_HOME/config.toml" "$BAK"
+  ok "backed up config.toml to $BAK"
+fi
+
+# Side-by-side trial home only: share auth and the plugin store with default Grok.
+if [ "$SAME_HOME" = 0 ]; then
+  if [ -f "$DEFAULT_HOME/auth.json" ] && [ ! -e "$THIN_HOME/auth.json" ]; then
+    ln -s "$DEFAULT_HOME/auth.json" "$THIN_HOME/auth.json"
+    [ -f "$DEFAULT_HOME/auth.json.lock" ] && ln -sf "$DEFAULT_HOME/auth.json.lock" "$THIN_HOME/auth.json.lock"
+    ok "linked auth from default Grok home"
+  fi
+  if [ -f "$DEFAULT_HOME/mcp_credentials.json" ] && [ ! -e "$THIN_HOME/mcp_credentials.json" ]; then
+    ln -s "$DEFAULT_HOME/mcp_credentials.json" "$THIN_HOME/mcp_credentials.json"
+  fi
+  if [ -d "$DEFAULT_HOME/installed-plugins" ] && [ ! -e "$THIN_HOME/installed-plugins" ]; then
+    ln -s "$DEFAULT_HOME/installed-plugins" "$THIN_HOME/installed-plugins"
+    ok "linked installed-plugins store"
+  fi
 fi
 
 # Grok's skill-read UI always opens $GROK_HOME/bundled/skills/<name>/SKILL.md.
@@ -269,11 +286,17 @@ json.dump(doc, open(path, "w"), indent=2)
 open(path, "a").write("\n")
 PY
 
-ok "thin home at $THIN_HOME"
-ok "default home untouched: $DEFAULT_HOME"
+ok "Grok keep-set applied at $THIN_HOME"
+if [ "$SAME_HOME" = 0 ]; then
+  ok "side-by-side trial; default home untouched: $DEFAULT_HOME"
+else
+  ok "this is the default grok home. Plain grok uses the keep-set."
+fi
 
 if [ "$INSTALL_ONLY" = 1 ]; then
   exit 0
 fi
-export GROK_HOME="$THIN_HOME"
+if [ "$SAME_HOME" = 0 ]; then
+  export GROK_HOME="$THIN_HOME"
+fi
 exec grok "$@"
