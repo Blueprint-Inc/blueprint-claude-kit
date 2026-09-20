@@ -1,0 +1,11 @@
+# Bundled scripts must check out with LF endings regardless of client config.
+# A CRLF checkout breaks the shebang line and the scripts fail to execute.
+*.sh text eol=lf
+*.py text eol=lf
+
+# Manifests are read by plugin tooling on every harness; keep them stable.
+*.json text eol=lf
+
+# SKILL.md bodies are this package's executable surface, not just prose.
+*.md text eol=lf
+*.tmpl text eol=lf

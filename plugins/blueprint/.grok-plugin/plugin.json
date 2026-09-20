@@ -1,0 +1,17 @@
+{
+  "name": "code-kit-blueprint",
+  "version": "0.1.0",
+  "description": "Blueprint overlay for code-kit: org base-branch and issue-scope defaults, Cloud Functions deployment, and cross-model deep review. Requires the code-kit plugin.",
+  "author": {
+    "name": "Blueprint"
+  },
+  "homepage": "https://github.com/Blueprint-Inc/blueprintos-code-kit",
+  "repository": "https://github.com/Blueprint-Inc/blueprintos-code-kit",
+  "license": "MIT",
+  "keywords": [
+    "compound-engineering",
+    "blueprint",
+    "overlay"
+  ],
+  "skills": "./skills/"
+}

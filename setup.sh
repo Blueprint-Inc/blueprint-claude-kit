@@ -6,8 +6,8 @@
 # environment on macOS. Safe to re-run (idempotent).
 #
 # Prerequisites installed:
-#   Homebrew, Node.js, Bun, GitHub CLI (gh), Claude Code CLI,
-#   Claude Code plugins, Playwright browsers, GitNexus, qmd MCP
+#   Homebrew, Node.js, Bun, GitHub CLI (gh), Claude Code CLI, qmd CLI,
+#   and exactly two Claude Code plugins: Compound Engineering and Impeccable.
 # ============================================================================
 
 set -euo pipefail
@@ -162,41 +162,30 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Uninstall duplicate / deprecated plugins
-# ---------------------------------------------------------------------------
-section "Removing deprecated plugins"
-DEPRECATED_PLUGINS=(
-  "code-review@claude-plugins-official"
-  "frontend-design@claude-plugins-official"
-)
-for plugin in "${DEPRECATED_PLUGINS[@]}"; do
-  if plugin_installed "$plugin"; then
-    dl "Removing $plugin..."
-    claude plugins uninstall "$plugin" 2>/dev/null && ok "Removed $plugin" || fail "Failed to remove $plugin"
-  else
-    ok "$plugin not present (nothing to remove)"
-  fi
-done
-
-# ---------------------------------------------------------------------------
-# 7. Claude Code plugins
+# 7. Claude Code plugins — exactly two
+#
+# The kit endorses Compound Engineering (the workflow system) and Impeccable
+# (frontend design fluency). Everything else is deliberately absent: it either
+# duplicated Compound Engineering or measured as unused. See
+# docs/claude-setup-baseline.md for the evidence behind each removal.
 # ---------------------------------------------------------------------------
 section "Claude Code Plugins"
-PLUGINS=(
-  "compound-engineering@every-marketplace"
-  "superpowers@claude-plugins-official"
-  "playwright@claude-plugins-official"
-  "pr-review-toolkit@claude-code-plugins"
-  "ralph-wiggum@claude-code-plugins"
-  "claude-md-management@claude-plugins-official"
+
+# marketplace|plugin@marketplace
+MARKETPLACES=(
+  "EveryInc/compound-engineering-plugin|compound-engineering@compound-engineering-plugin"
+  "pbakaus/impeccable|impeccable@impeccable"
 )
-for plugin in "${PLUGINS[@]}"; do
+for entry in "${MARKETPLACES[@]}"; do
+  mp="${entry%%|*}"; plugin="${entry##*|}"
   if plugin_installed "$plugin"; then
     ok "$plugin already installed"
     track_skip
   else
+    dl "Adding marketplace $mp..."
+    claude plugin marketplace add "$mp" >/dev/null 2>&1 || true
     dl "Installing $plugin..."
-    if claude plugins install "$plugin" 2>/dev/null; then
+    if claude plugin install "$plugin" --scope user 2>/dev/null; then
       ok "$plugin installed"
       track_install
     else
@@ -206,39 +195,21 @@ for plugin in "${PLUGINS[@]}"; do
   fi
 done
 
-# ---------------------------------------------------------------------------
-# 8. Playwright browsers
-# ---------------------------------------------------------------------------
-section "Playwright Browsers"
-dl "Installing/updating Playwright browsers..."
-if npx playwright install 2>/dev/null; then
-  ok "Playwright browsers installed"
-  track_install
+# Turn off anything the baseline retired, without uninstalling it — the apply
+# script owns the authoritative on/off map and backs settings.json up first.
+section "Applying the plugin baseline"
+if [[ -x "$(dirname "${BASH_SOURCE[0]}")/scripts/apply-baseline-plugins.sh" ]]; then
+  "$(dirname "${BASH_SOURCE[0]}")/scripts/apply-baseline-plugins.sh" && ok "Baseline applied" || fail "Baseline script failed"
 else
-  fail "Playwright browser install failed"
+  fail "scripts/apply-baseline-plugins.sh not found — plugin states not enforced"
   track_fail
 fi
 
 # ---------------------------------------------------------------------------
-# 9. GitNexus
-# ---------------------------------------------------------------------------
-section "GitNexus"
-if command_exists gitnexus; then
-  ok "GitNexus already installed"
-  track_skip
-else
-  dl "Installing GitNexus..."
-  if npm install -g gitnexus; then
-    ok "GitNexus installed"
-    track_install
-  else
-    fail "GitNexus failed to install"
-    track_fail
-  fi
-fi
-
-# ---------------------------------------------------------------------------
-# 10. qmd MCP
+# 8. qmd CLI
+#
+# The CLI stays — it measured ~50 uses over the 2026-07-08 audit window. The qmd
+# MCP server does not; it measured 7 and was removed.
 # ---------------------------------------------------------------------------
 section "qmd"
 if command_exists qmd; then
@@ -253,14 +224,6 @@ else
     fail "qmd failed to install"
     track_fail
   fi
-fi
-
-dl "Registering qmd MCP server with Claude Code..."
-if claude mcp add --scope user qmd -- qmd mcp 2>/dev/null; then
-  ok "qmd MCP server registered"
-else
-  fail "qmd MCP server registration failed"
-  track_fail
 fi
 
 # ---------------------------------------------------------------------------

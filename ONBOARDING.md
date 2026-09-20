@@ -1,184 +1,105 @@
-# Onboarding Guide
+# Onboarding
 
-A step-by-step guide to set up the shared Claude Code environment used by this project.
+The long version, for a new developer setting up a Blueprint machine from scratch. If you
+just want the kit working in one project, the [README](README.md) quick start is enough.
+
+Provider setup lives in [`docs/guides/`](docs/guides/README.md) and is not repeated here.
 
 ---
 
-## Step 1: Set Up Your `~/Projects` Directory
+## 1. Workspace layout
 
-All repos live under a single `~/Projects` directory. The tooling assumes this layout — the deploy script, the `/deploy-blueprint-claude` command, and the workspace-level `CLAUDE.md` all reference this path.
+Blueprint repositories live under a single `~/Projects` directory. The workspace-level
+`CLAUDE.md` and the maintenance scripts assume it.
 
-```bash
+```
 mkdir -p ~/Projects
 cd ~/Projects
 ```
 
-### Clone the common repos
-
-These three repos power the shared Claude Code environment. Everyone needs all of them.
-
-```bash
-# This kit — commands, skills, and agent_docs that deploy into every project
-git clone git@github.com:Blueprint-Inc/blueprint-claude-kit.git
-
-# Autonomous dev loop foundation (wiggum, issue management, TDD enforcement)
-git clone https://github.com/quadradad/claude-bootstrapping.git
-
-# Multi-agent review system, brainstorming, and planning (Claude Code plugin)
-git clone https://github.com/EveryInc/compound-engineering-plugin.git compound-engineering-plugin
-```
-
-Then clone whichever project repos you'll be working in alongside them.
-
-### Why `~/Projects`?
-
-- The deploy script at `~/Projects/blueprint-claude-kit/deploy.sh` is referenced by the `/deploy-blueprint-claude` command across all projects
-- The workspace-level `CLAUDE.md` at `~/Projects/CLAUDE.md` provides cross-project context when you open Claude Code from `~/Projects`
-- Consistent paths mean team members can share instructions without path translation
+Clone the repositories you will work in. You do **not** need to clone this kit — it
+installs as a plugin. Clone it only if you intend to change the kit itself.
 
 ---
 
-## Step 2: Run the Setup Script
+## 2. Prerequisites and plugins
 
-The setup script installs all prerequisites automatically — Homebrew, Node.js, Bun, GitHub CLI, Claude Code CLI, plugins, Playwright browsers, GitNexus, and qmd.
-
-```bash
-~/Projects/blueprint-claude-kit/setup.sh
+```
+~/Projects/blueprintos-code-kit/setup.sh
 ```
 
-The script is idempotent — it skips anything already installed and is safe to re-run.
+If you have not cloned the kit, run the steps by hand instead — Homebrew, Node, Bun, the
+GitHub CLI, the Claude Code CLI, and qmd — then install the two plugins:
 
-> **Note:** You will be prompted to authenticate with GitHub (`gh auth login`) if not already authenticated.
+```
+claude plugin marketplace add EveryInc/compound-engineering-plugin
+claude plugin install compound-engineering@compound-engineering-plugin --scope user
+claude plugin marketplace add Blueprint-Inc/blueprintos-code-kit
+claude plugin install code-kit@blueprintos-code-kit --scope user
+claude plugin install code-kit-blueprint@blueprintos-code-kit --scope user
+```
 
-### Optional tools (project-dependent)
+The script is idempotent and safe to re-run. It also applies the plugin baseline, which
+turns off anything that competed with those two. **Two plugins is the whole set** — see
+[the baseline](docs/claude-setup-baseline.md) for what was removed and the measurements
+behind each removal.
 
-| Tool | What it's for | Install |
-|------|--------------|---------|
-| [gcloud CLI](https://cloud.google.com/sdk/docs/install) | GCP deploys (Cloud Functions, BigQuery) | `brew install google-cloud-sdk` then `gcloud auth login` |
-| [gws](https://github.com/nicholasgasior/gws) | Google Workspace CLI (Drive, Gmail, Sheets) | `npm install -g gws` |
-| [Python 3](https://www.python.org/) | Python projects, scripting | `brew install python` |
+### Provider accounts
 
-### Verify
-
-Run `claude` and check that the plugins load. You should see skills like `/ce-brainstorm`, `/ce-plan`, `/ce-code-review`, `/wiggum`, and `/pomo` available.
+| You need | Guide |
+|---|---|
+| GitHub — always | [docs/guides/github.md](docs/guides/github.md) |
+| Google Cloud — only if you deploy Cloud Functions | [docs/guides/google-cloud.md](docs/guides/google-cloud.md) |
 
 ---
 
-## Step 3: Configure MCP Servers
+## 3. Index your projects with qmd
 
-MCP servers give Claude access to external tools and data sources. `setup.sh` already installed qmd and registered it as an MCP server — you just need to index your projects.
+qmd searches your files locally instead of the agent reading whole files. The CLI is
+installed; the MCP server is deliberately not — it measured 7 calls against the CLI's ~50.
 
-### qmd — Index Your Projects
-
-qmd indexes your project files locally so Claude can search them instead of reading entire files. Saves ~92% of token usage.
-
-Index each project you work on:
-
-```bash
+```
 cd ~/Projects/your-project
-qmd collection add . --name your-project --mask "**/*.py"  # adjust mask for your file types
-qmd embed  # creates vector embeddings for semantic search
+qmd collection add . --name your-project --mask "**/*.py"
+qmd embed
 ```
 
-### Google Dev Knowledge (optional)
-
-Gives Claude access to Google's developer documentation:
-
-```bash
-claude mcp add --scope user --transport http google-dev-knowledge \
-  --url "https://developerknowledge.googleapis.com/mcp" \
-  --header "X-Goog-Api-Key: <your-api-key>"
-```
+Adjust the mask for the languages in that repository.
 
 ---
 
-## Step 4: Set Up Global `CLAUDE.md`
+## 4. Personal and workspace instructions
 
-Your global `CLAUDE.md` lives at `~/.claude/CLAUDE.md` and applies to every Claude Code session regardless of project. Use it for personal preferences, tool priorities, and cross-cutting instructions.
+**`~/.claude/CLAUDE.md`** applies to every session on your machine, in every project. Keep
+it for personal preferences and cross-cutting rules. It is yours and is not in any repo.
 
-```bash
-mkdir -p ~/.claude
-```
+**`~/Projects/CLAUDE.md`** gives cross-project context when you open a harness from
+`~/Projects` — what each project is, how they relate, and the per-project conventions.
 
-Create `~/.claude/CLAUDE.md` with at minimum:
-
-```markdown
-# Global Claude Code Configuration
-
-## Document Search Strategy
-
-Before reading files or exploring directories, always use qmd to search for information in local projects.
-
-### Search Tool Priority
-
-1. **First: Use qmd** for document and code searches
-   - `qmd search "query"` - Fast keyword-based search
-   - `qmd query "query"` - Hybrid search with re-ranking (recommended for complex queries)
-   - `qmd vsearch "query"` - Semantic similarity search
-
-2. **Then: Use Read/Glob/Grep** only if qmd doesn't return sufficient results
-
-### Current qmd Collections
-
-Run `qmd status` to see indexed collections and available documents.
-```
-
-Add any personal preferences, API configurations, or tool-specific instructions below that. This file is yours — it's not checked into any repo.
+Both cost context in every session, so keep them tight. Size is a budget concern rather
+than a correctness one; nothing truncates them.
 
 ---
 
-## Step 5: Set Up the Workspace `CLAUDE.md`
+## 5. Bootstrap each project
 
-The workspace-level `CLAUDE.md` at `~/Projects/CLAUDE.md` provides cross-project context when you open Claude Code from the `~/Projects` directory. This is useful when working across multiple repos in the same session.
-
-This file describes:
-- What each project is and how they relate to each other
-- Language and indentation conventions per project
-- Dev server, build, and test commands
-- Links to per-project `CLAUDE.md` files for deeper context
-
-If a workspace `CLAUDE.md` already exists, read it and make sure your projects are represented. If you're the first to set this up, create one that maps out your project relationships.
-
----
-
-## Step 6: Deploy the Kit to Your Projects
-
-Run the deploy script to install commands, skills, and agent_docs into each project you work on:
-
-```bash
-~/Projects/blueprint-claude-kit/deploy.sh ~/Projects/your-project
 ```
-
-The script:
-- Copies commands (`/wiggum`, `/create-issues`, `/close-issue`, `/triage`, `/bootstrap-project`, `/deploy-blueprint-claude`)
-- Copies skills (`/pomo`, `/deploy`, `/ce-deep-review-beta`)
-- Copies reference docs to `agent_docs/`
-- Creates `compound-engineering.local.md` template
-- Creates `.claude/lessons.md`
-- Appends a Workflow section to existing `CLAUDE.md` (non-destructive)
-- Prompts before overwriting anything
-
-After deploying, bootstrap the project:
-
-```bash
 cd ~/Projects/your-project
 claude
 > /bootstrap-project
 ```
 
-This scans the project, detects the tech stack, and configures `CLAUDE.md` with project-specific settings and the right review agents.
-
-Repeat for each project you work on.
+Once per project. It detects the stack, seeds `agent_docs/`, writes the review-agent
+config and `.code-kit/config.json`, and never overwrites a file you already have.
 
 ---
 
-## Step 7: Configure Permissions
+## 6. Permissions
 
-Claude Code prompts for approval on shell commands by default. Add permissions for frequently used tools to avoid repeated prompts.
+Harnesses prompt for approval on shell commands. Allowlisting the ones you run constantly
+removes that friction.
 
-### Global permissions (`~/.claude/settings.json`)
-
-These apply to every project:
+Global, in `~/.claude/settings.json`:
 
 ```json
 {
@@ -188,65 +109,49 @@ These apply to every project:
       "Bash(gh pr *)",
       "Bash(gh api *)",
       "Bash(git checkout *)",
-      "Bash(git push:*)",
-      "Bash(venv/bin/pytest *)"
+      "Bash(git push:*)"
     ]
   }
 }
 ```
 
-### Per-project permissions (`.claude/settings.local.json`)
-
-Add project-specific permissions in each repo. This file is gitignored — it won't be committed.
+Per-project, in `.claude/settings.local.json` — gitignored, so it stays yours:
 
 ```json
 {
   "permissions": {
     "allow": [
       "Bash(npm run dev)",
-      "Bash(npm run build)",
-      "Bash(npm run check)"
+      "Bash(npm run build)"
     ]
   }
 }
 ```
 
-The deploy script will remind you about gh permissions if they're missing.
+**Never approve a command whose text contains a secret.** The harness saves the full
+command string as a permission rule, in plaintext, indefinitely. Pass secrets through
+environment variables instead.
 
 ---
 
-## Step 8: Verify Everything Works
+## 7. Verify
 
-Quick smoke test to confirm the setup:
+The four gates between installed and working, and how to check each one, are in
+[the setup guides](docs/guides/README.md#the-four-gates-between-installed-and-working).
+The short version:
 
-```bash
-cd ~/Projects/your-project
-claude
-```
+- **Grok Build** — `grok inspect` reports all four at once.
+- **Claude Code** — `claude plugin list` shows what is installed but cannot report
+  workspace trust or whether your instruction file was read. Put a distinctive line in the
+  project's `CLAUDE.md` and ask the agent to repeat it.
 
-Then in Claude Code:
-
-1. **qmd works:** Ask Claude to search for something — it should use `qmd search` or `qmd query` before reading files
-2. **Commands available:** Type `/` and verify you see `wiggum`, `create-issues`, `close-issue`, `triage`, `pomo`, `ce:brainstorm`, `ce:plan`, `ce:review`
-3. **gh works:** Run `/triage` — it should fetch issues without permission prompts
-4. **Playwright works:** Ask Claude to take a screenshot of a URL
+Then confirm the workflow itself: open a project, type `/`, and check that `start-work`,
+`triage`, `wiggum`, and `pomo` appear alongside the `ce-` skills. Run `/triage` — it
+should reach your issue tracker without prompting for permission.
 
 ---
 
-## Quick Reference
+## Where to go next
 
-Once you're set up, here's how the workflow commands fit together:
-
-```
-/ce-brainstorm → /ce-plan → /create-issues → /wiggum → /ce-code-review → /close-issue → /pomo
-```
-
-| Size of work | What to use |
-|-------------|-------------|
-| Quick bug fix | Fix it, `/pomo` if the root cause was surprising |
-| Small feature (< 1 hour) | `/ce-plan` → implement → `/ce-code-review` |
-| Medium feature (hours) | `/ce-brainstorm` → `/ce-plan` → `/create-issues` → implement → `/ce-code-review` |
-| Large feature (days) | Full pipeline: brainstorm → plan → issues → `/wiggum` → review → close |
-| Backlog grooming | `/triage` |
-
-See the [README](README.md) for detailed documentation on each command.
+The [README](README.md) has the skill reference and how the kit fits together with
+Compound Engineering.

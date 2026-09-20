@@ -1,0 +1,19 @@
+{
+  "name": "code-kit",
+  "version": "0.1.0",
+  "description": "Issue-driven development workflows for Compound Engineering: isolated worktrees, plan-to-issues, an autonomous implementation loop, backlog triage, and post-mortem capture.",
+  "author": {
+    "name": "Blueprint"
+  },
+  "homepage": "https://github.com/Blueprint-Inc/blueprintos-code-kit",
+  "repository": "https://github.com/Blueprint-Inc/blueprintos-code-kit",
+  "license": "MIT",
+  "keywords": [
+    "compound-engineering",
+    "workflow-automation",
+    "issue-tracking",
+    "worktrees",
+    "onboarding"
+  ],
+  "skills": "./skills/"
+}

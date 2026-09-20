@@ -15,20 +15,24 @@ path = sys.argv[1]
 d = json.load(open(path))
 plugins = d.setdefault("enabledPlugins", {})
 baseline = {
+    # On — the only two plugins the kit endorses.
     "compound-engineering@compound-engineering-plugin": True,
-    "frontend-design@claude-plugins-official": True,
-    "playwright@claude-plugins-official": True,
-    "claude-md-management@claude-plugins-official": True,
-    "claude-code-setup@claude-plugins-official": True,
+    "impeccable@impeccable": True,
+    # Off — duplicated Compound Engineering, or went unused.
     "superpowers@claude-plugins-official": False,
     "code-review@claude-plugins-official": False,
     "pr-review-toolkit@claude-plugins-official": False,
     "pr-review-toolkit@claude-code-plugins": False,
+    "frontend-design@claude-plugins-official": False,
     "frontend-design@claude-code-plugins": False,
+    "playwright@claude-plugins-official": False,
+    "claude-md-management@claude-plugins-official": False,
+    "claude-code-setup@claude-plugins-official": False,
     "ralph-loop@claude-plugins-official": False,
     "ralph-wiggum@claude-code-plugins": False,
     "github@claude-plugins-official": False,
 }
+
 changed = []
 for k, v in baseline.items():
     if k in plugins and plugins[k] != v:
