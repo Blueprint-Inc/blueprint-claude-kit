@@ -51,52 +51,92 @@ printf '{"toolName":"read_file","toolInput":{"target_file":"x"}}\n' \
   | GROK_HOME="$THIN" python3 "$KIT_ROOT/scripts/grok-thin-home/hooks/jev-pretool.sh" \
   | grep -q '"allow"' || fail "read_file should allow"
 
-# Jev request shape. These two bugs shipped together and both fail open, so the
-# gate was dead on every call: the endpoint 404'd and the model field was wrong.
-# A stub server records what the hook actually sends.
+# Jev gate. Every failure path here fails open, so a broken request silently
+# disables the gate on every call -- which is exactly how a 404 endpoint and a
+# bogus model field both shipped unnoticed. A stub server records what the hook
+# actually sends and replies with a verdict the test controls.
 STUB_DIR="$TMP/jev-stub"
 mkdir -p "$STUB_DIR"
 printf 'secret-not-real\n' > "$STUB_DIR/key"
-python3 - "$STUB_DIR" <<'STUB' &
+printf '%s\n' '{"choice":"in_scope","confidence":0.99}' > "$STUB_DIR/reply"
+python3 - "$STUB_DIR" >/dev/null 2>&1 <<'STUB' &
 import http.server, json, sys, pathlib
 out = pathlib.Path(sys.argv[1])
 class H(http.server.BaseHTTPRequestHandler):
 	def do_POST(self):
 		body = self.rfile.read(int(self.headers.get("content-length", 0)))
-		(out / "seen.json").write_text(json.dumps({"path": self.path, "body": json.loads(body or "{}")}))
-		payload = json.dumps({"model": "jev-1.13.0", "answers": {"next": {
-			"type": "choice", "choice": "write", "confidence": 0.95, "probabilities": {"write": 0.95}}}}).encode()
+		(out / "seen.json").write_text(json.dumps(
+			{"path": self.path, "body": json.loads(body or "{}")}))
+		ans = json.loads((out / "reply").read_text())
+		ans["type"] = "choice"
+		payload = json.dumps({"answers": {"scope": ans}}).encode()
 		self.send_response(200); self.send_header("content-type", "application/json")
-		self.send_header("content-length", str(len(payload))); self.end_headers(); self.wfile.write(payload)
+		self.send_header("content-length", str(len(payload))); self.end_headers()
+		self.wfile.write(payload)
 	def log_message(self, *a): pass
 srv = http.server.HTTPServer(("127.0.0.1", 0), H)
 (out / "port").write_text(str(srv.server_port))
-srv.handle_request()
+for _ in range(6):
+	srv.handle_request()
 STUB
+STUB_PID=$!
+trap 'kill "$STUB_PID" 2>/dev/null || true' EXIT INT TERM
 for _ in $(seq 1 50); do [ -s "$STUB_DIR/port" ] && break; sleep 0.1; done
 [ -s "$STUB_DIR/port" ] || fail "Jev stub server never bound"
-printf '{"toolName":"write","toolInput":{}}\n' \
-  | GROK_HOME="$THIN" JEV_API_KEY_FILE="$STUB_DIR/key" \
-    TYPESAFE_DECISIONS_URL="http://127.0.0.1:$(cat "$STUB_DIR/port")/v1/systemone" \
-    python3 "$KIT_ROOT/scripts/grok-thin-home/hooks/jev-pretool.sh" >/dev/null || true
-wait
+STUB_URL="http://127.0.0.1:$(cat "$STUB_DIR/port")/v1/systemone"
+
+jev_hook() { # stdin json -> hook stdout
+  GROK_HOME="$THIN" JEV_API_KEY_FILE="$STUB_DIR/key" TYPESAFE_DECISIONS_URL="$STUB_URL" \
+    python3 "$KIT_ROOT/scripts/grok-thin-home/hooks/jev-pretool.sh"
+}
+
+# 1. Request shape, and that secret-shaped literals are scrubbed before egress.
+printf '%s\n' '{"toolName":"write","toolInput":{"command":"deploy --token=ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA /etc/hosts"},"cwd":"/w"}' \
+  | jev_hook >/dev/null || true
 [ -s "$STUB_DIR/seen.json" ] || fail "Jev hook never sent a request"
 python3 - "$STUB_DIR/seen.json" <<'CHECK' || fail "Jev request shape wrong"
 import json, sys
 d = json.load(open(sys.argv[1]))
+b = d["body"]
 assert d["path"].endswith("/v1/systemone"), f"wrong path: {d['path']}"
-assert "model" in d["body"], "request must send `model`, not selectedModels"
-assert "selectedModels" not in d["body"], "selectedModels is not an API field (400)"
-assert d["body"]["model"] == "jev-1.13.0", f"model not pinned: {d['body']['model']}"
-assert d["body"]["questions"]["next"]["type"] == "choice"
+assert "model" in b, "request must send `model`, not selectedModels"
+assert "selectedModels" not in b, "selectedModels is not an API field (400)"
+assert b["model"] == "jev-1.13.0", f"model not pinned: {b['model']}"
+q = b["questions"]["scope"]
+assert q["type"] == "choice"
+assert set(q["criteria"]) == {"in_scope", "out_of_scope"}, "must ask a scope question"
+blob = json.dumps(b)
+assert "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" not in blob, "token leaked to the vendor"
+assert "[redacted]" in blob, "redaction never fired"
+assert "/etc/hosts" in blob, "paths must survive redaction -- they are the signal"
 CHECK
+
+# 2. A confident out_of_scope verdict must actually deny. Without this the gate
+#    can regress to always-allow and every other check here still passes.
+printf '%s\n' '{"choice":"out_of_scope","confidence":0.99}' > "$STUB_DIR/reply"
+printf '%s\n' '{"toolName":"write","toolInput":{"path":"/etc/sudoers"},"cwd":"/w"}' \
+  | jev_hook | grep -q '"deny"' || fail "confident out_of_scope must deny"
+
+# 3. Below the floor it must fail open, even on the same verdict.
+printf '%s\n' '{"choice":"out_of_scope","confidence":0.4}' > "$STUB_DIR/reply"
+printf '%s\n' '{"toolName":"write","toolInput":{"path":"/etc/sudoers"},"cwd":"/w"}' \
+  | jev_hook | grep -q '"allow"' || fail "below-floor verdict must fail open"
+
+# 4. A bare tool name carries no signal -- the model answers from the name alone
+#    and denies the same tool every session. That must never reach the API.
+rm -f "$STUB_DIR/seen.json"
+printf '%s\n' '{"toolName":"write","toolInput":{}}' | jev_hook | grep -q '"allow"' \
+  || fail "bare tool name must allow"
+[ -e "$STUB_DIR/seen.json" ] && fail "bare tool name must not be sent to the vendor"
+
+kill "$STUB_PID" 2>/dev/null || true
+wait "$STUB_PID" 2>/dev/null || true
 
 # The shipped default must target the real endpoint, not the 404 spelling.
 grep -q 'api.typesafe.ai/v1/systemone' "$KIT_ROOT/scripts/grok-thin-home/hooks/jev-pretool.sh" \
   || fail "hook default endpoint is not /v1/systemone"
 grep -q 'v1/system-one' "$KIT_ROOT/scripts/grok-thin-home/hooks/jev-pretool.sh" \
   && fail "hook still references the 404 path /v1/system-one"
-
 # Impeccable skip on PHP
 printf '{"toolName":"search_replace","toolInput":{"target_file":"app/Foo.php"}}\n' \
   | python3 "$KIT_ROOT/scripts/grok-thin-home/hooks/impeccable-ui-edit.sh" \
