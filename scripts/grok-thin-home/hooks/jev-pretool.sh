@@ -35,7 +35,13 @@ UNGATED = {
 # contents and diffs carry the most secret material and add nothing the judgment
 # needs, which is the path and the command.
 SENT_FIELDS = ("command", "path", "file_path", "target_file", "url")
-MAX_FIELD = 600
+# A tail-only cut is a bypass: pad a command past the cap with harmless prose and
+# the dangerous tail is truncated away, so the gate allows it. Keep both ends and
+# elide the middle instead, and keep the budget wide enough that real commands
+# arrive whole. A very long command still has a blind spot in its middle, which is
+# the cost of a fixed budget -- the ends are where an appended payload lands.
+MAX_FIELD = 2000
+HEAD_SHARE = 0.6
 
 # Redact secret-shaped literals before egress. These strip values, never paths --
 # `cat ~/.aws/credentials` must still read as reaching for credentials, because
@@ -57,7 +63,9 @@ def scrub(value):
     for pattern in SECRET_PATTERNS:
         text = pattern.sub("[redacted]", text)
     if len(text) > MAX_FIELD:
-        text = text[:MAX_FIELD] + "...[truncated]"
+        head = int(MAX_FIELD * HEAD_SHARE)
+        tail = MAX_FIELD - head
+        text = text[:head] + "...[elided]..." + text[-tail:]
     return text
 
 
