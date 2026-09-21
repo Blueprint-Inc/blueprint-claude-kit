@@ -262,29 +262,7 @@ cp "$HOOK_SRC/write-catalog.sh" "$THIN_HOME/hooks/write-catalog.sh"
 chmod +x "$THIN_HOME/hooks/"*.sh
 
 JEV_KEY="${JEV_API_KEY_FILE:-$HOME/.config/dev-approved-lfg/jev_api_key}"
-python3 - "$THIN_HOME/hooks/thin-session.json" "$JEV_KEY" <<'PY'
-import json, os, sys
-path, key = sys.argv[1], sys.argv[2]
-doc = {
-  "hooks": {
-    "SessionStart": [{"hooks": [{"type": "command", "command": "./write-catalog.sh", "timeout": 15}]}],
-    "PostToolUse": [{
-      "matcher": "search_replace|write|Write|Edit|MultiEdit",
-      "hooks": [{"type": "command", "command": "./impeccable-ui-edit.sh", "timeout": 6}],
-    }],
-  }
-}
-if os.path.isfile(key) and os.path.getsize(key) > 0:
-    doc["hooks"]["PreToolUse"] = [{
-      "matcher": "run_terminal_command|search_replace|write|use_tool|spawn_subagent|Bash|Write|Edit|MultiEdit",
-      "hooks": [{"type": "command", "command": "./jev-pretool.sh", "timeout": 8}],
-    }]
-    print("  grok-thin: Jev PreToolUse enabled")
-else:
-    print("  grok-thin: Jev hook skipped (no key). Run scripts/pickup-jev-key.sh")
-json.dump(doc, open(path, "w"), indent=2)
-open(path, "a").write("\n")
-PY
+python3 "$KIT_ROOT/scripts/write-thin-session.py" "$THIN_HOME/hooks/thin-session.json" "$JEV_KEY"
 
 ok "Grok keep-set applied at $THIN_HOME"
 if [ "$SAME_HOME" = 0 ]; then

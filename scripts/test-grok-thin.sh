@@ -21,6 +21,11 @@ TOML
 
 export GROK_DEFAULT_HOME="$DEFAULT"
 export GROK_THIN_HOME="$THIN"
+# Pin the key path into the sandbox. Without this the suite reads the developer's
+# real ~/.config/dev-approved-lfg/jev_api_key, so the "no key" assertions below
+# pass or fail depending on whose machine runs them -- they passed for years only
+# because nobody had a key yet.
+export JEV_API_KEY_FILE="$TMP/no-such-jev-key"
 bash "$KIT_ROOT/scripts/grok-thin.sh" --install-only
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -209,6 +214,36 @@ import json,sys
 d=json.load(open(sys.argv[1]))
 assert "PreToolUse" not in d["hooks"]
 ' "$DEF/hooks/thin-session.json" || fail "default apply installed Jev without a key"
+
+# Picking up a key must be sufficient on its own. The registration is written
+# only when the key already exists, so before this was fixed a key installed
+# after the last apply never took effect and the gate silently never fired.
+KEYHOME="$TMP/keyhome"
+mkdir -p "$KEYHOME/hooks"
+KEYFILE="$TMP/picked-key"
+GROK_DEFAULT_HOME="$KEYHOME" GROK_THIN_HOME="$KEYHOME" JEV_API_KEY_FILE="$KEYFILE" \
+  python3 "$KIT_ROOT/scripts/write-thin-session.py" "$KEYHOME/hooks/thin-session.json" \
+  "$KEYFILE" >/dev/null
+python3 -c '
+import json,sys
+d=json.load(open(sys.argv[1]))["hooks"]
+assert "PreToolUse" not in d, "must not register before a key exists"
+' "$KEYHOME/hooks/thin-session.json" || fail "keyless home should have no PreToolUse"
+
+printf "not-a-real-key\n" > "$KEYFILE"
+GROK_DEFAULT_HOME="$KEYHOME" GROK_THIN_HOME="$KEYHOME" JEV_API_KEY_FILE="$KEYFILE" \
+  bash "$KIT_ROOT/scripts/pickup-jev-key.sh" >/dev/null 2>&1 || fail "pickup-jev-key failed"
+python3 -c '
+import json,sys
+d=json.load(open(sys.argv[1]))["hooks"]
+assert "PreToolUse" in d, "picking up a key must register the gate without a re-apply"
+h=d["PreToolUse"][0]["hooks"][0]
+assert h["command"] == "./jev-pretool.sh", h
+assert "run_terminal_command" in d["PreToolUse"][0]["matcher"]
+' "$KEYHOME/hooks/thin-session.json" || fail "key pickup did not register the Jev gate"
+
+# A home without the kit must not be created by the pickup.
+[ -e "$TMP/nonexistent-home/hooks/thin-session.json" ] && fail "pickup created hooks in an uninstalled home"
 
 echo "OK grok-thin smoke ($TMP)"
 rm -rf "$TMP"
